@@ -14,7 +14,7 @@ export default function Login({ setLogado }) {
     console.log(loginNome, senha);
     try {
       const res = await axios.post(
-        `http://${import.meta.env.VITE_IP}:4400/getLogin`,
+        `http://${import.meta.env.VITE_IP}:4400/getLogin/`,
         {
           params: {
             login: loginNome,
