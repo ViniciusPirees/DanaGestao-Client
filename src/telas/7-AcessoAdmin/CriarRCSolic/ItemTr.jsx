@@ -64,10 +64,10 @@ export default function ItemTr({ lista, index, setAtivoImg, setImg, setTelaItem,
         { params: { matCod } }
       );
       if (res?.data.length > 0) {
-        console.log(res?.data);
+ 
         var buffer = res?.data[0].MatAnexo.data;
         var base64 = _arrayBufferToBase64(buffer);
-        console.log(base64);
+     
         setImg(base64);
         setAtivoImg(true);
       } else {

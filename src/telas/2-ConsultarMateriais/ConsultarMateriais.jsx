@@ -1,25 +1,30 @@
 import React, { useEffect, useRef, useState } from "react";
-import NavBar from "../components/NavBar";
+import NavBar from "../components/NavBar/NavBar";
 import { styleAll } from "../../css";
-import Titulo from "../components/Titulo";
+import Titulo from "../components/NavBar/Titulo";
 import axios from "axios";
 import Filtros from "./Filtros";
 
 import { SlArrowRight } from "react-icons/sl";
 import ItemTr from "./ItemTr";
-import ImgPopUp from "../components/ImgPopUp";
+import ImgPopUp from "../components/Camera/ImgPopUp";
 import { ToastContainer } from "react-toastify";
 import ReactPaginate from "react-paginate";
 import Notificacao from "../components/Notificacao";
 import { ImSearch } from "react-icons/im";
-import getLogin from "../components/getLogin";
+import getLogin from "../components/Login/getLogin";
 import { useLocation, useNavigate } from "react-router-dom";
 import TelaItem from "./Items/TelaItem";
 import { BiSortDown, BiSortUp } from "react-icons/bi";
 import NumRC from "./AltNumRC/NumRC";
 import { FaFileExcel } from "react-icons/fa6";
 import Excel from "./Excel/Excel";
-import LoadingGet from "../components/LoadingGet";
+import LoadingGet from "../components/Loading/LoadingGet";
+import ExcluirSolic from "./Excluir/ExcluirSolic";
+import { FaChartBar } from "react-icons/fa";
+import Colunas from "../components/Table/Colunas";
+import Table from "../components/Table/Tables";
+import { RiGridFill } from "react-icons/ri";
 
 export default function ConsultarMateriais() {
   const nav = useNavigate();
@@ -39,29 +44,41 @@ export default function ConsultarMateriais() {
   const [materiais, setMateriais] = useState();
   const [load, setLoad] = useState(false);
   const [ativoImg, setAtivoImg] = useState(false);
-  var DataHoje = new Date();
-  const defaultValueFin = DataHoje.toLocaleDateString("en-CA");
-  DataHoje.setMonth(DataHoje.getMonth() - 1);
-  const defaultValueIni = DataHoje.toLocaleDateString("en-CA");
+  const [ativoExc, setAtivoExc] = useState(false);
 
   const [total, setTotal] = useState(0);
   const [pageN, setPageN] = useState(0);
-  const [selecQtdPag, setSelecQtdPag] = useState(10);
+
+  const localstorage = localStorage;
+  const filtrosSalvos =
+    localstorage?.filtrosConsultaM == undefined
+      ? [["SolicMaterial.MatSolicitacao", ""]]
+      : JSON.parse(localstorage?.filtrosConsultaM);
 
   const [filtroAll, setFiltroAll] = useState(
     state?.matCod == undefined
-      ? [["MatSolicitacao", ""]]
-      : [["MatSolicitacao", state.matCod.toString()]]
+      ? filtrosSalvos
+      : [["SolicMaterial.MatSolicitacao", state.matCod.toString()]]
   );
-  const [dataIni, setDataIni] = useState(
-    state?.matCod == undefined
-      ? defaultValueIni
-      : new Date(DataHoje.setFullYear(2020, 0, 1)).toLocaleDateString("en-CA")
-  );
-  const [dataFin, setDataFin] = useState(defaultValueFin);
-  const [order, setOrder] = useState("MatData");
-  const [orderVal, setorderVal] = useState("desc");
-  const [img, setImg] = useState("");
+  const orderSalvos =
+    localstorage?.orderConsultaM == undefined
+      ? "MatData"
+      : localstorage?.orderConsultaM;
+
+  const orderValSalvos =
+    localstorage?.orderValConsultaM == undefined
+      ? "desc"
+      : localstorage?.orderValConsultaM;
+
+  const qtdPagSalvoSolic =
+    localstorage?.qtdPagSalvoSolic == undefined
+      ? "10"
+      : localstorage?.qtdPagSalvoSolic;
+
+  const [selecQtdPag, setSelecQtdPag] = useState(qtdPagSalvoSolic);
+  const [order, setOrder] = useState(orderSalvos);
+  const [orderVal, setorderVal] = useState(orderValSalvos);
+  const [img, setImg] = useState([]);
 
   const firstUpdate = useRef(true);
   useEffect(() => {
@@ -78,9 +95,13 @@ export default function ConsultarMateriais() {
 
   useEffect(() => {
     const keyDownHandler = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setColAtivo(false);
+      }
       if (event.key === "Enter") {
         event.preventDefault();
-        getMateriais();
+        changePage({ selected: 0 }).then(getMateriais());
       }
     };
 
@@ -89,41 +110,44 @@ export default function ConsultarMateriais() {
     return () => {
       document.removeEventListener("keydown", keyDownHandler);
     };
-  }, [pageN, selecQtdPag, filtroAll, dataIni, dataFin, order, orderVal]);
+  }, [pageN, selecQtdPag, filtroAll, order, orderVal]);
 
   //GET ESTOQUEMAN POR DESCRICAO
   const getMateriais = async () => {
     setLoad(true);
+    localStorage.setItem("filtrosConsultaM", JSON.stringify(filtroAll));
+    localStorage.setItem("orderConsultaM", order);
+    localStorage.setItem("qtdPagSalvoSolic", selecQtdPag);
     getMateriaisCount({
       filtroAll,
-      dataIni,
-      dataFin,
-      tabela: "SolicMaterial",
       tabdata: "MatData",
+      tabela: "SolicMaterial",
     });
-
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getFiltros`,
+        `http://${import.meta.env.VITE_IP}/getFiltros`,
         {
           params: {
             pageN: pageN,
             selecQtdPag: selecQtdPag,
             filtroAll: filtroAll,
-            dataIni: dataIni,
-            dataFin: dataFin,
             tabela: "SolicMaterial",
-            tabdata: "MatData",
             order: order,
             orderVal: orderVal,
           },
         }
       );
-      setMateriais(res?.data);
-      setLoad(false);
-      if (res?.data == 0) {
+
+      if (res?.data?.code) {
+        setMateriais([]);
         Notificacao(["atencao", "Nenhuma Solicitação foi encontrada."]);
+      } else {
+        setMateriais(res?.data);
+        if (res?.data == 0) {
+          Notificacao(["atencao", "Nenhuma Solicitação foi encontrada."]);
+        }
       }
+      setLoad(false);
     } catch (err) {
       Notificacao(["erro", "Erro ao buscar as Solicitações " + err]);
       console.log(err);
@@ -135,10 +159,14 @@ export default function ConsultarMateriais() {
   const getMateriaisCount = async (props) => {
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getFiltroCount`,
+        `http://${import.meta.env.VITE_IP}/getFiltroCount`,
         { params: props }
       );
-      setTotal(res?.data[0][""]);
+      if (res?.data?.code) {
+        setTotal(0);
+      } else {
+        setTotal(res?.data[0][""]);
+      }
     } catch (err) {
       console.log(err);
       Notificacao(["erro", "Erro ao buscar as Solicitações " + err]);
@@ -156,6 +184,8 @@ export default function ConsultarMateriais() {
         setTelaItem={setTelaItem}
         setItens={setItens}
         ativarNumRC={ativarNumRC}
+        ativarExc={ativarExc}
+        colunas={colunas}
       />
     ));
   };
@@ -174,17 +204,19 @@ export default function ConsultarMateriais() {
     setativoNUMRC(true);
   };
 
+  const ativarExc = ({ lista }) => {
+    setInfos(lista);
+    setAtivoExc(true);
+  };
+
   const getExcel = async () => {
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getExcel`,
+        `http://${import.meta.env.VITE_IP}/getExcel`,
         {
           params: {
             filtroAll: filtroAll,
-            dataIni: dataIni,
-            dataFin: dataFin,
             tabela: "SolicMaterial",
-            tabdata: "MatData",
             order: order,
             orderVal: orderVal,
             orderItem: "MatSolicitacaoItem",
@@ -192,16 +224,72 @@ export default function ConsultarMateriais() {
         }
       );
 
-      if (res?.data == 0) {
+      if (res?.data?.code) {
         Notificacao(["atencao", "Nenhuma Solicitação foi encontrada."]);
       } else {
-        Excel({ solic: res.data });
+        if (res?.data == 0) {
+          Notificacao(["atencao", "Nenhuma Solicitação foi encontrada."]);
+        } else {
+          Excel({ solic: res.data });
+        }
       }
     } catch (err) {
       Notificacao(["erro", "Erro ao buscar as Solicitações " + err]);
       console.log(err);
     }
   };
+
+  const colunasLocal =
+    localstorage?.colunasMat == undefined
+      ? ""
+      : JSON.parse(localstorage?.colunasMat);
+
+  const tableHeaders = [
+    ["", 62, 62, true, ""],
+    ["Solic", 110, 30, true, "MatSolicitacao"],
+    ["Data", 170, 50, true, "MatData", 170],
+    ["Nº RC", 110, 30, true, "MatRC"],
+    ["Status", 250, 50, true, "Status", 170],
+    ["Máquina", 350, 50, true, "MatMaquinaDesc", 300],
+    ["OS", 110, 20, true, "MatOs", 80],
+    ["Solicitante", 250, 20, true, "MatSolicitanteDesc", 200],
+    ["Observação", 330, 20, true, "MatObservacao", 350],
+  ];
+
+  const [colunas, setColunas] = useState(
+    colunasLocal == "" ? tableHeaders : colunasLocal
+  );
+
+  const [colAtivo, setColAtivo] = useState(false);
+
+  const refCol = useRef();
+  const refCol2 = useRef();
+
+  useEffect(() => {
+    localStorage.setItem("colunasMat", JSON.stringify(colunas));
+  }, [colunas]);
+
+  useEffect(() => {
+    /**
+     * Alert if clicked on outside of element
+     */
+    function handleClickOutside(event) {
+      if (
+        refCol.current &&
+        !refCol.current.contains(event.target) &&
+        refCol2.current &&
+        !refCol2.current.contains(event.target)
+      ) {
+        setColAtivo(false);
+      }
+    }
+    // Bind the event listener
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      // Unbind the event listener on clean up
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [refCol, refCol2]);
 
   return (
     <div className="flex">
@@ -216,7 +304,7 @@ export default function ConsultarMateriais() {
         theme="colored"
       />
       <NavBar ativo="2"></NavBar>
-      <div className="w-full pl-[8.5em] pr-10">
+      <div className="w-full pl-[8.5em] pr-10 tablet:pl-[6.5em] laptop:pl-[6.5em]">
         {ativoImg && <ImgPopUp img={img} setAtivoImg={setAtivoImg}></ImgPopUp>}
         {telaItem && (
           <TelaItem itens={itens} setTelaItem={setTelaItem}></TelaItem>
@@ -228,10 +316,17 @@ export default function ConsultarMateriais() {
             getMateriais={getMateriais}
           ></NumRC>
         )}
+        {ativoExc && (
+          <ExcluirSolic
+            solic={infos}
+            setAtivoExc={setAtivoExc}
+            getMateriais={getMateriais}
+          ></ExcluirSolic>
+        )}
         {load && <LoadingGet></LoadingGet>}
         <Titulo titulo="Consultar Materiais" />
         <div className="">
-          <div className="my-9 flex">
+          <div className="laptop:my-9 desktop:my-9 tablet:my-4 laptop:flex desktop:flex">
             <div>
               <Filtros
                 setFiltroAll={setFiltroAll}
@@ -239,54 +334,35 @@ export default function ConsultarMateriais() {
               ></Filtros>
             </div>
 
-            <div className="flex h-full ml-4">
-              <h1 className="my-auto mx-4 text-2xl font-bold">Data:</h1>
-              <input
-                value={dataIni}
-                onChange={(e) => {
-                  setDataIni(e.target.value);
-                }}
-                className={
-                  "h-full py-[0.55em] px-2 w-[10.3rem] text-xl " +
-                  styleAll.inputSemW +
-                  " focus:-outline-offset-0"
-                }
-                type="date"
-              ></input>
-              <h1 className="my-auto mx-3 text-xl font-bold">até</h1>
-              <input
-                value={dataFin}
-                onChange={(e) => {
-                  setDataFin(e.target.value);
-                }}
-                className={
-                  "h-full py-[0.55em] px-2 w-[10.3rem] text-xl " +
-                  styleAll.inputSemW +
-                  " focus:-outline-offset-0"
-                }
-                type="date"
-              ></input>
-            </div>
-            <div className="flex h-full ml-4">
-              <h1 className="my-auto mx-4 text-2xl font-bold">Ordem:</h1>
+            <div className="flex h-full laptop:ml-4 desktop:ml-4 tablet:mb-10">
+              <h1 className="my-auto mx-4 text-2xl tablet:text-xl font-bold">
+                Ordem:
+              </h1>
               <select
                 id="large"
                 onChange={(e) => setOrder(e.target.value)}
+                value={order}
                 className={
-                  "block w-fit px-3 py-3 text-xl  text-gray-900 border-0 focus:-outline-offset-0 focus:outline-none " +
+                  "block  px-3 py-3 text-xl tablet:text-lg text-gray-900 border-0 focus:-outline-offset-0 focus:outline-none " +
                   styleAll.inputSemW
                 }
               >
                 <option value="MatData">Data</option>
                 <option value="MatDescricao">Descrição</option>
-                <option value="MatSolicitacao">Cód. Solicitação</option>
+                <option value="SolicMaterial.MatSolicitacao">
+                  Cód. Solicitação
+                </option>
                 <option value="MatRC">Número RC</option>
                 <option value="MatMaquina">Máquina</option>
                 <option value="MatOs">OS</option>
                 <option value="MatSolicitanteDesc">Solicitante</option>
                 <option value="MatObservacao">Observação</option>
-                <option value="MatItemDescricao">Item - Descrição</option>
-                <option value="MatItemQtd">Item - Quantidade</option>
+                <option value="SolicMaterialItem.MatItemDescricao">
+                  Item - Descrição
+                </option>
+                <option value="SolicMaterialItem.MatItemQtd">
+                  Item - Quantidade
+                </option>
               </select>
 
               <button
@@ -294,18 +370,18 @@ export default function ConsultarMateriais() {
                 onClick={() => setorderVal(orderVal == "desc" ? "asc" : "desc")}
               >
                 {orderVal == "desc" ? (
-                  <BiSortDown className="ml-5 bg-dana text-[3.3em] p-2  rounded-md"></BiSortDown>
+                  <BiSortDown className="ml-5 tablet:ml-2 bg-dana text-[3.3em] p-2 tablet:text-[2.8em]  rounded-md"></BiSortDown>
                 ) : (
-                  <BiSortUp className="ml-5 bg-dana text-[3.3em] p-2 pt-2 rounded-md"></BiSortUp>
+                  <BiSortUp className="ml-5 tablet:ml-2 bg-dana text-[3.3em] p-2 tablet:text-[2.8em]  pt-2 rounded-md"></BiSortUp>
                 )}
               </button>
             </div>
           </div>
           <div className=" w-full flex justify-between">
             <div className="flex">
-              <div className="flex relative ml-5 -mt-6">
+              <div className="flex relative ml-5 laptop:-mt-10 desktop:-mt-10 tablet:-mt-7">
                 <button
-                  className="flex bg-dana rounded-md duration-200 hover:scale-105 text-2xl font-bold p-2"
+                  className="flex bg-dana rounded-md duration-200 hover:scale-105 text-2xl tablet:text-xl font-bold p-2"
                   onClick={() => {
                     changePage({ selected: 0 }).then(getMateriais());
                   }}
@@ -314,9 +390,9 @@ export default function ConsultarMateriais() {
                   <ImSearch className="my-auto mx-auto ml-3" />
                 </button>
               </div>
-              <div className="flex relative ml-5 -mt-6">
+              <div className="flex relative ml-5 laptop:-mt-10 desktop:-mt-10 tablet:-mt-7">
                 <button
-                  className="flex bg-[#107C41] rounded-md duration-200 hover:scale-105 text-2xl font-bold p-2"
+                  className="flex bg-[#107C41] rounded-md duration-200 tablet:text-xl hover:scale-105 text-2xl font-bold p-2"
                   onClick={() => {
                     getExcel();
                   }}
@@ -327,35 +403,38 @@ export default function ConsultarMateriais() {
               </div>
             </div>
           </div>
-          <div className="overflow-x-auto w-full mt-8 mb-10 rounded-xl ">
-            <table className="table rounded-lg mx-auto overflow-x-auto w-max">
-              <thead className=" ">
-                <tr className="text-xl bg-dana font-extrabold">
-                  <th className="rounded-ss-xl"></th>
-                  <th className="p-3 w-[7em] ">Solicitação</th>
-                  <th className="w-[12em]">Data</th>
-                  <th className="w-[6em]">Nº RC</th>
-                  <th className="w-[13em]">Status</th>
-                  <th className="w-[6em]">Máquina</th>
-                  <th className="w-[25em]">Descrição</th>
-                  <th className="w-[6em]">OS</th>
-                  <th className="w-[18em]">Solicitante</th>
-                  <th className="w-[18em] rounded-se-xl">Observação</th>
-                </tr>
-              </thead>
-              <tbody className="[&>*:nth-child(odd)]:bg-fundo [&>*:nth-child(even)]:bg-[#292929]">
-                {dadosMat()}
-              </tbody>
-            </table>
+
+          <div className="flex right-20 tablet:right-12 -mt-12 tablet:-mt-10 absolute  ">
+            <button
+              ref={refCol}
+              className="flex bg-dana rounded-md duration-200 hover:scale-105 text-xl tablet:text-lg font-bold p-2"
+              onClick={() => {
+                setColAtivo(!colAtivo);
+              }}
+            >
+              Colunas
+              <RiGridFill className="my-auto mx-auto ml-[0.35em]" />
+            </button>
+            {colAtivo && (
+              <Colunas
+                colunas={colunas}
+                setColunas={setColunas}
+                refCol2={refCol2}
+                setColAtivo={setColAtivo}
+              ></Colunas>
+            )}
           </div>
-          <div className=" mb-14 flex float-right relative">
+          <div className="-mt-5">
+            <Table headers={colunas} tableContent={dadosMat()}></Table>
+          </div>
+          <div className="mb-14 laptop:flex desktop:flex float-right relative">
             <ReactPaginate
               previousLabel={"Anterior"}
               nextLabel={"Próxima"}
               pageCount={pagesTotal}
               forcePage={pageN}
               onPageChange={changePage}
-              containerClassName="bg-[#3B3B3B] flex rounded-lg h-full text-xl text-white font-bold"
+              containerClassName="bg-[#3B3B3B] flex rounded-lg h-full text-xl tablet:text-lg text-white font-bold"
               previousClassName="py-2 duration-200 rounded-s-lg  hover:bg-dana"
               previousLinkClassName="py-2 px-5"
               nextClassName="py-2 duration-200 rounded-e-lg  hover:bg-dana"
@@ -372,7 +451,7 @@ export default function ConsultarMateriais() {
                 value={selecQtdPag}
                 onChange={(e) => setSelecQtdPag(e.target.value)}
                 className={
-                  " py-2 px-3 ml-5 rounded-md text-xl font-bold border-0 " +
+                  " py-2 px-3 ml-5 rounded-md text-xl tablet:text-lg tablet:float-right tablet:mt-5 font-bold border-0 " +
                   styleAll.inputSemW
                 }
               >

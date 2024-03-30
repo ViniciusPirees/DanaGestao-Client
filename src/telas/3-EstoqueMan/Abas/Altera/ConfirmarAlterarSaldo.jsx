@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { ToastContainer } from "react-toastify";
-import NavBar from "../../../components/NavBar";
-import Titulo from "../../../components/Titulo";
+import NavBar from "../../../components/NavBar/NavBar";
+import Titulo from "../../../components/NavBar/Titulo";
 import axios from "axios";
 import Notificacao from "../../../components/Notificacao";
-import getLogin from "../../../components/getLogin";
+import getLogin from "../../../components/Login/getLogin";
 
 export default function ConfirmarAlterarSaldo({
   setAtivo,
@@ -12,6 +12,7 @@ export default function ConfirmarAlterarSaldo({
   saldo,
   setInfosEst,
   maquina,
+  os,
 }) {
   var usuCod = "";
   var usuNome = "";
@@ -23,10 +24,9 @@ export default function ConfirmarAlterarSaldo({
   }, []);
 
   const confirmar = async () => {
-    console.log(maquina);
     try {
       const res = await axios.post(
-        `http://${import.meta.env.VITE_IP}:4400/alteraSaldo`,
+        `http://${import.meta.env.VITE_IP}/alteraSaldo`,
         {
           params: {
             saldo: saldo,
@@ -34,6 +34,7 @@ export default function ConfirmarAlterarSaldo({
             usuCod: usuCod,
             usuNome: usuNome,
             maquina: maquina,
+            os: os,
           },
         }
       );

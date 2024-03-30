@@ -16,6 +16,9 @@ export default async function Excel({ rcs }) {
     "Requisição",
     "Aprovador",
     "Fornecedor",
+    "Nota Fiscal",
+    "Valor NF",
+    "Data Recebimento",
     "Item",
     "Descrição",
     "Qtd. Pendente",
@@ -166,6 +169,21 @@ export default async function Excel({ rcs }) {
     pattern: "solid",
     fgColor: { argb: "1C85C7" },
   };
+  ws.getCell("Z1").fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "1C85C7" },
+  };
+  ws.getCell("AA1").fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "1C85C7" },
+  };
+  ws.getCell("AB1").fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "1C85C7" },
+  };
 
   ws.columns = [
     { key: "ORG", width: 8 },
@@ -175,6 +193,9 @@ export default async function Excel({ rcs }) {
     { key: "req", width: 12 },
     { key: "appr", width: 20 },
     { key: "forn", width: 35 },
+    { key: "nf", width: 15 },
+    { key: "valornf", width: 15 },
+    { key: "datarece", width: 15 },
     { key: "item", width: 20 },
     { key: "desc", width: 40 },
     { key: "qtd", width: 15 },
@@ -194,25 +215,52 @@ export default async function Excel({ rcs }) {
     { key: "obc", width: 10 },
     { key: "ponum", width: 15 },
   ];
-
-  const status = ({ reqstatus, poNum, closed }) => {
-    if (reqstatus == "IN PROCESS" && poNum == null) {
+  const status = ({ rc }) => {
+    if (
+      rc?.REQ_STATUS == "PRE-APPROVED" ||
+      (rc?.REQ_STATUS == "APPROVED" &&
+        rc?.PO_NUM == null &&
+        rc?.REQ_APPROVER == rc?.PREPARER &&
+        (rc?.LINE_TOTAL_RC == 0 || rc?.LINE_TOTAL_RC == null) &&
+        rc.PENDING_TOTAL_RC == 0 &&
+        rc.RECEIVED_TOTAL_RC == 0)
+    ) {
+      return "RC em orçamento de compras";
+    } else if (
+      rc?.REQ_STATUS == "INCOMPLETE" ||
+      (rc?.REQ_STATUS == "IN PROCESS" &&
+        rc?.PO_NUM == null &&
+        rc?.REQ_APPROVER == rc?.PREPARER &&
+        (rc?.LINE_TOTAL_RC > 0 ||
+          rc.PENDING_TOTAL_RC > 0 ||
+          rc.RECEIVED_TOTAL_RC > 0))
+    ) {
+      return "Requer aprovação do solicitante";
+    } else if (rc?.REQ_STATUS == "IN PROCESS" && rc?.PO_NUM == null) {
       return "RC Em aprovação";
-    } else if (reqstatus == "APPROVED" && poNum == null) {
+    } else if (rc?.REQ_STATUS == "APPROVED" && rc?.PO_NUM == null) {
+      F;
       return "RC Aprovada sem pedido";
-    } else if (reqstatus == "APPROVED" && poNum != null && closed == "OPEN") {
+    } else if (
+      rc?.REQ_STATUS == "APPROVED" &&
+      rc?.PO_NUM != null &&
+      rc.CLOSED_CODE == "OPEN"
+    ) {
       return "RC Aprovada com pedido aberto";
-    } else if (reqstatus == "APPROVED" && poNum != null && closed == "CLOSED") {
+    } else if (
+      rc?.REQ_STATUS == "APPROVED" &&
+      rc?.PO_NUM != null &&
+      (rc.CLOSED_CODE == "CLOSED" || rc.CLOSED_CODE == "CLOSED FOR RECEIVING")
+    ) {
       return "RC Aprovada com pedido entregue";
     } else if (
-      reqstatus != "APPROVED" &&
-      reqstatus != "IN PROCESS" &&
-      reqstatus != null
+      rc?.REQ_STATUS != "APPROVED" &&
+      rc?.REQ_STATUS != "IN PROCESS" &&
+      rc?.REQ_STATUS != null
     ) {
       return "RC Cancelada";
     }
   };
-
   const rows = rcs.map((valor) => [
     valor.ORG,
     `${valor.CREATION_DATE.substring(8, 10)}/${valor.CREATION_DATE.substring(
@@ -224,13 +272,22 @@ export default async function Excel({ rcs }) {
     )}`,
     valor.PREPARER,
     status({
-      reqstatus: valor.REQ_STATUS,
-      poNum: valor.PO_NUM,
-      closed: valor.CLOSED_CODE,
+      rc: valor,
     }),
     `${valor.REQUISITION}/${valor.RE_LINE_NUM}`,
     valor.REQ_APPROVER,
     valor.VENDOR_NAME,
+    valor.NR_NOTA_FISCAL,
+    valor.VALOR_LIQUIDO,
+    valor.DATA_RECEBIMENTO == null
+      ? ""
+      : `${valor.DATA_RECEBIMENTO.toString().substring(
+          8,
+          10
+        )}/${valor.DATA_RECEBIMENTO.toString().substring(
+          5,
+          7
+        )}/${valor.DATA_RECEBIMENTO.toString().substring(2, 4)}`,
     valor.ITEM,
     valor.ITEM_DESCRIPTION,
     valor.PENDING_QUANTITY_RC,
@@ -246,7 +303,7 @@ export default async function Excel({ rcs }) {
     valor.LOCAL,
     valor.CHARGE_ACCOUNT,
     valor.PREPARER,
-    valor.JUSTIFICATION,
+    valor.DESCRIPTION,
     valor.REQ_STATUS,
     valor.CLOSED_CODE,
     valor.OBC_SDCV,
@@ -539,6 +596,39 @@ export default async function Excel({ rcs }) {
         bottom: { style: "thin" },
         right: { style: "thin" },
       };
+      ws.getCell(`Z${index + 2}`).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "f5f9fc" },
+      };
+      ws.getCell(`Z${index + 2}`).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      ws.getCell(`AA${index + 2}`).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "f5f9fc" },
+      };
+      ws.getCell(`AA${index + 2}`).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      ws.getCell(`AB${index + 2}`).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "f5f9fc" },
+      };
+      ws.getCell(`AB${index + 2}`).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
     } else {
       ws.getCell(`A${index + 2}`).fill = {
         type: "pattern",
@@ -815,6 +905,39 @@ export default async function Excel({ rcs }) {
         bottom: { style: "thin" },
         right: { style: "thin" },
       };
+      ws.getCell(`Z${index + 2}`).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFFFF" },
+      };
+      ws.getCell(`Z${index + 2}`).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      ws.getCell(`AA${index + 2}`).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFFFF" },
+      };
+      ws.getCell(`AA${index + 2}`).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      ws.getCell(`AB${index + 2}`).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFFFF" },
+      };
+      ws.getCell(`AB${index + 2}`).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
     }
   });
 
@@ -939,6 +1062,21 @@ export default async function Excel({ rcs }) {
     wrapText: true,
   };
   ws.getColumn(25).alignment = {
+    vertical: "middle",
+    horizontal: "center",
+    wrapText: true,
+  };
+  ws.getColumn(26).alignment = {
+    vertical: "middle",
+    horizontal: "center",
+    wrapText: true,
+  };
+  ws.getColumn(27).alignment = {
+    vertical: "middle",
+    horizontal: "center",
+    wrapText: true,
+  };
+  ws.getColumn(28).alignment = {
     vertical: "middle",
     horizontal: "center",
     wrapText: true,

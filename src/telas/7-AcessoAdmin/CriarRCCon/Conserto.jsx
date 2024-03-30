@@ -93,9 +93,9 @@ export default function Conserto() {
   };
 
   const pagesTotal = Math.ceil(total / selecQtdPag);
-  console.log(selecQtdPag, total)
+
   const dadosMat = () => {
-    console.log(itens)
+
     return consertos?.map((conserto, index) => (
       <ItemTr
         conserto={conserto}
@@ -135,7 +135,7 @@ export default function Conserto() {
 
                   getConserto()
                 }}>
-                  <ImSearch className="ml-5 bg-dana text-[3.3em] p-2 rounded-md" />
+                  <ImSearch className="ml-5 tablet:ml-2 bg-dana text-[3.3em] tablet:text-[2.75em] p-2 rounded-md" />
                 </button>
               </div>
               <div className="flex h-full ml-10">

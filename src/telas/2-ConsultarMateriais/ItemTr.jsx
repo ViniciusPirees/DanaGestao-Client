@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { SlArrowRight, SlArrowDown } from "react-icons/sl";
 import axios from "axios";
 
-import { FaBars } from "react-icons/fa6";
+import { FaBars, FaTrashCan } from "react-icons/fa6";
 import { RiPencilFill } from "react-icons/ri";
 import { FaBoxes, FaHistory } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
@@ -10,7 +10,8 @@ import { BsFillImageFill } from "react-icons/bs";
 import Notificacao from "../components/Notificacao";
 import { TbNumber } from "react-icons/tb";
 import { ImSearch } from "react-icons/im";
-import getLogin from "../components/getLogin";
+import getLogin from "../components/Login/getLogin";
+import { styleAll } from "../../css";
 
 export default function ItemTr({
   lista,
@@ -20,6 +21,8 @@ export default function ItemTr({
   setTelaItem,
   setItens,
   ativarNumRC,
+  ativarExc,
+  colunas,
 }) {
   var data = `${lista.MatData.substring(8, 10)}/${lista.MatData.substring(
     5,
@@ -46,7 +49,7 @@ export default function ItemTr({
   const buscaItens = async () => {
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getItens`,
+        `http://${import.meta.env.VITE_IP}/getItens`,
         { params: { matCod } }
       );
       setItens(res?.data);
@@ -55,6 +58,19 @@ export default function ItemTr({
       console.log(err);
       Notificacao(["erro", "Erro ao buscar itens. " + err]);
     }
+  };
+
+  const convertBase64ToFile = function (image) {
+    const byteString = atob(image.replace(/-/g, "+").replace(/_/g, "/"));
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i += 1) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    const newBlob = new Blob([ab], {
+      type: "image/jpeg",
+    });
+    return newBlob;
   };
 
   function _arrayBufferToBase64(buffer) {
@@ -70,14 +86,18 @@ export default function ItemTr({
   const getAnexo = async () => {
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getAnexo`,
+        `http://${import.meta.env.VITE_IP}/getAnexo`,
         { params: { matCod } }
       );
       if (res?.data.length > 0) {
-        var buffer = res?.data[0].MatAnexo.data;
-        var base64 = _arrayBufferToBase64(buffer);
-
-        setImg(base64);
+        let imgsArray = [];
+        res?.data?.forEach((file) => {
+          var buffer = file.MatAnexo.data;
+          var base64 = _arrayBufferToBase64(buffer);
+          var image = convertBase64ToFile(base64);
+          imgsArray.push(image);
+        });
+        setImg(imgsArray);
         setAtivoImg(true);
       } else {
         Notificacao([
@@ -114,9 +134,28 @@ export default function ItemTr({
   }, [refBtn, refBtn2]);
 
   const status = () => {
-    console.log(lista);
     if (lista?.MatRC == 0) {
       return "Sem RC";
+    } else if (
+      lista?.REQ_STATUS == "PRE-APPROVED" ||
+      (lista?.REQ_STATUS == "APPROVED" &&
+        lista?.PO_NUM == null &&
+        lista?.REQ_APPROVER == lista?.PREPARER &&
+        (lista?.LINE_TOTAL_RC == 0 || lista?.LINE_TOTAL_RC == null) &&
+        lista.PENDING_TOTAL_RC == 0 &&
+        lista.RECEIVED_TOTAL_RC == 0)
+    ) {
+      return "RC em orçamento de compras";
+    } else if (
+      lista?.REQ_STATUS == "INCOMPLETE" ||
+      (lista?.REQ_STATUS == "IN PROCESS" &&
+        lista?.PO_NUM == null &&
+        lista?.REQ_APPROVER == lista?.PREPARER &&
+        (lista?.LINE_TOTAL_RC > 0 ||
+          lista.PENDING_TOTAL_RC > 0 ||
+          lista.RECEIVED_TOTAL_RC > 0))
+    ) {
+      return "Requer aprovação do solicitante";
     } else if (lista?.REQ_STATUS == "IN PROCESS" && lista?.PO_NUM == null) {
       return "RC Em aprovação";
     } else if (lista?.REQ_STATUS == "APPROVED" && lista?.PO_NUM == null) {
@@ -146,118 +185,134 @@ export default function ItemTr({
 
   return (
     <>
-      <tr className="text-xl border-b-4 border-[#4f4f4f]  " key={index}>
-        <td className="text-center  border-[rgb(79,79,79)] p-3 ">
-          <button
-            ref={refBtn2}
-            onClick={() => setAtivo(!ativo)}
-            className="flex mx-2 duration-200 hover:brightness-75 "
-          >
-            <FaBars className="bg-dana p-2 text-4xl rounded-md my-auto text-[#fff]" />
-          </button>
-          {ativo && (
-            <>
-              <div
-                ref={refBtn}
-                className="absolute mt-[-1.78em] rounded-lg ml-[2.25em]  bg-[#fff]"
-              >
-                <button
-                  onClick={() => {
-                    buscaItens();
-                    setAtivo(false);
-                    setTelaItem(true);
-                  }}
-                  className="text-fundo flex font-bold text-xl rounded-lg py-2 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
-                >
-                  <FaBoxes className="text-xl my-auto mr-2 " /> Itens
-                </button>
-                {nivel == 3 && (
+      <tr className="text-base  border-[#4f4f4f]  " key={index}>
+        {colunas.map((col, i) => {
+          if (col[3]) {
+            if (col[4] == "") {
+              return (
+                <td className={styleAll.tabletd} key={i}>
                   <button
-                    onClick={() => {
-                      buscaItens().then((val) =>
-                        nav("/SolicitarMateriais", {
-                          state: { itens: val, solic: lista, tipo: 2 },
-                        })
-                      );
-                    }}
-                    className="text-fundo flex font-bold text-xl rounded-lg py-2 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
+                    ref={refBtn2}
+                    onClick={() => setAtivo(!ativo)}
+                    className="flex mx-2 duration-200 hover:brightness-75 "
                   >
-                    <RiPencilFill className="text-xl my-auto mr-2 " /> Editar
+                    <FaBars className="bg-dana p-2 text-4xl rounded-md my-auto text-[#fff]" />
                   </button>
-                )}
+                  {ativo && (
+                    <>
+                      <div
+                        ref={refBtn}
+                        className="absolute mt-[-2.25em] rounded-lg ml-[2.8em] z-[3] bg-[#fff]"
+                      >
+                        <button
+                          onClick={() => {
+                            buscaItens();
+                            setAtivo(false);
+                            setTelaItem(true);
+                          }}
+                          className="text-fundo flex font-bold text-lg rounded-t-lg py-1 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
+                        >
+                          <FaBoxes className="text-lg my-auto mr-2" /> Itens
+                        </button>
+                        {nivel >= 2 && (
+                          <button
+                            onClick={() => {
+                              buscaItens().then((val) =>
+                                nav("/SolicitarMateriais", {
+                                  state: { itens: val, solic: lista, tipo: 2 },
+                                })
+                              );
+                            }}
+                            className="text-fundo flex font-bold text-lg py-1 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
+                          >
+                            <RiPencilFill className="text-lg my-auto mr-2 " />{" "}
+                            Editar
+                          </button>
+                        )}
 
-                <button
-                  onClick={() => {
-                    nav("./Historico", { state: { solic: lista } });
-                  }}
-                  className="text-fundo flex font-bold text-xl rounded-lg py-2 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
-                >
-                  <FaHistory className="text-xl my-auto mr-2 " /> Histórico
-                </button>
-                <button
-                  onClick={() => {
-                    getAnexo();
-                    setAtivo(false);
-                  }}
-                  className="text-fundo flex font-bold text-xl rounded-lg py-2 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
-                >
-                  <BsFillImageFill className="text-xl my-auto mr-2 " /> Anexo
-                </button>
-                { nivel > 1 &&
-                  <button
-                    onClick={() => {
-                      setAtivo(false);
-                      ativarNumRC({ lista });
-                    }}
-                    className="text-fundo flex font-bold text-xl rounded-lg py-2 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
-                  >
-                    <TbNumber className="text-xl my-auto mr-2 " /> Alterar Núm.
-                    RC
-                  </button>
-                }
-                {lista?.MatRC.length > 0 && (
-                  <button
-                    onClick={() => {
-                      nav("/ControleRC", {
-                        state: { numRC: lista?.MatRC },
-                      });
-                    }}
-                    className="text-fundo flex font-bold text-xl rounded-lg py-2 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
-                  >
-                    <ImSearch className="text-xl my-auto mr-2 " /> Buscar RC
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </td>
-        <td className="text-center border-x-4 border-[#4f4f4f] break-words flex-wrap max-w-xs p-4">
-          {lista.MatSolicitacao}
-        </td>
-        <td className="text-center border-r-4 border-[#4f4f4f]  break-words flex-wrap max-w-xs p-4">
-          {data}
-        </td>
-        <td className="text-center border-r-4 border-[#4f4f4f]  break-words flex-wrap max-w-xs p-4">
-          {lista.MatRC}
-        </td>
-        <td className="text-center border-x-4 border-[#4f4f4f] break-words  flex-wrap max-w-xs p-4">
-          {status()}
-        </td>
-        <td className="text-center border-r-4 border-[#4f4f4f]  break-words flex-wrap max-w-xs p-4">
-          {lista.MatMaquina}
-        </td>
-        <td className="text-center border-r-4 border-[#4f4f4f]  break-words flex-wrap  max-w-xs p-4">
-          {lista.MatDescricao}
-        </td>
-        <td className="text-center border-r-4 border-[#4f4f4f]  break-words flex-wrap max-w-xs p-4">
-          {lista.MatOs}
-        </td>
-        <td className="text-center border-r-4 border-[#4f4f4f]  break-words flex-wrap  max-w-xs p-4">
-          {lista.MatSolicitanteDesc}
-        </td>
-        <td className="text-center  break-words max-w-xs p-4">
-          {lista.MatObservacao}
-        </td>
+                        <button
+                          onClick={() => {
+                            nav("./Historico", { state: { solic: lista } });
+                          }}
+                          className="text-fundo flex font-bold text-lg py-1 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
+                        >
+                          <FaHistory className="text-lg my-auto mr-2  " />{" "}
+                          Histórico
+                        </button>
+                        <button
+                          onClick={() => {
+                            getAnexo();
+                            setAtivo(false);
+                          }}
+                          className="text-fundo flex font-bold text-lg py-1 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
+                        >
+                          <BsFillImageFill className="text-lg my-auto mr-2 " />{" "}
+                          Anexo
+                        </button>
+
+                        {nivel > 1 && (
+                          <button
+                            onClick={() => {
+                              setAtivo(false);
+                              ativarNumRC({ lista });
+                            }}
+                            className="text-fundo flex font-bold text-lg  py-1 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
+                          >
+                            <TbNumber className="text-lg my-auto mr-2 " />{" "}
+                            Alterar Núm. RC
+                          </button>
+                        )}
+                        {lista?.MatRC.length > 0 && (
+                          <button
+                            onClick={() => {
+                              nav("/ControleRC", {
+                                state: { numRC: lista?.MatRC },
+                              });
+                            }}
+                            className="text-fundo flex font-bold text-lg py-1 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
+                          >
+                            <ImSearch className="text-lg my-auto mr-2 " />{" "}
+                            Buscar RC
+                          </button>
+                        )}
+                        {nivel > 2 && (
+                          <button
+                            onClick={() => {
+                              setAtivo(false);
+                              ativarExc({ lista });
+                            }}
+                            className="text-fundo flex font-bold text-lg rounded-b-lg py-1 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
+                          >
+                            <FaTrashCan className="text-lg my-auto mr-2 " />{" "}
+                            Excluir
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </td>
+              );
+            } else if (col[4] == "Status") {
+              return (
+                <td className={styleAll.tabletd} key={i}>
+                  {status()}
+                </td>
+              );
+            } else if (col[4] == "MatData") {
+              return (
+                <td className={styleAll.tabletd} key={i}>
+                  {data}
+                </td>
+              );
+            } else {
+              return (
+                <td className={styleAll.tabletd} key={i}>
+                  {lista?.[col[4]]}
+                </td>
+              );
+            }
+          }
+        })}
       </tr>
     </>
   );

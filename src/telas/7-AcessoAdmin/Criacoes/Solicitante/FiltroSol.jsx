@@ -16,13 +16,13 @@ export default function FiltroSol({ setFiltro, buscardados, setInput, changePage
   }, [value]);
 
   return (
-    <div className="flex">
-      <div className="mx-4">
+     <div className="flex">
+      <div className="mx-4 tablet:mx-0">
         <select
           id="large"
           onChange={(e) => setValue(e.target.value)}
           className={
-            " p-3 ml-5 rounded-md text-2xl font-bold border-0 " +
+            " p-3 rounded-md h-fit text-xl tablet:text-lg font-bold border-0 " +
             styleAll.inputSemW
           }
         >
@@ -37,7 +37,7 @@ export default function FiltroSol({ setFiltro, buscardados, setInput, changePage
           }}
           value={inputF}
           className={
-            " p-3 ml-5 rounded-md text-2xl font-bold border-0 " +
+            " p-3 rounded-md  tablet:ml-2 text-xl tablet:text-lg  font-bold border-0 " +
             styleAll.inputSemW
           }
           type="text"
@@ -45,7 +45,7 @@ export default function FiltroSol({ setFiltro, buscardados, setInput, changePage
       </div>
       <div className="flex">
         <button onClick={handleClick}>
-          <ImSearch className="ml-5 bg-dana text-[3.3em] p-2 rounded-md" />
+          <ImSearch className="ml-5  tablet:ml-2 bg-dana text-[3.0em] tablet:text-[2.75em] p-2 rounded-md" />
         </button>
       </div>
     </div>

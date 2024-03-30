@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ImCross } from "react-icons/im";
 import { styleAll } from "../../../css";
 import Notificacao from "../../components/Notificacao";
-import getLogin from "../../components/getLogin";
+import getLogin from "../../components/Login/getLogin";
 import axios from "axios";
 import InputMask from "react-input-mask";
 
@@ -18,10 +18,10 @@ export default function NumRC({ infos, setativoNUMRC, getMateriais }) {
   const [numRC, setNumRC] = useState(infos?.MatRC);
 
   const confirmar = async () => {
-    if (numRC.length >= 8) {
+    if (numRC.length >= 8 || numRC.length == 0) {
       try {
         const res = await axios.post(
-          `http://${import.meta.env.VITE_IP}:4400/alteraNRC`,
+          `http://${import.meta.env.VITE_IP}/alteraNRC`,
           {
             params: {
               conCod: infos?.MatSolicitacao,
@@ -58,9 +58,9 @@ export default function NumRC({ infos, setativoNUMRC, getMateriais }) {
     <>
       <div
         onClick={() => setativoNUMRC(false)}
-        className=" opacity-50 bg-[#000] z-[3] fixed top-0 left-0 w-full h-full"
+        className=" opacity-50 bg-[#000] z-[5] fixed top-0 left-0 w-full h-full"
       ></div>
-      <div className="fixed bg-[#1f1f1f] left-0 right-0 z-[4] mx-auto top-0 bottom-0 my-auto h-fit w-[40%] p-10 border-2 rounded-md ">
+      <div className="fixed bg-[#1f1f1f] desktop:left-0 tablet:left-[4.5em] laptop:left-[4.5em] right-0 z-[6] mx-auto top-0 bottom-0 my-auto h-fit desktop:w-[40%] laptop:w-[60%] tablet:w-[90%] p-10 border-2 rounded-md ">
         <button
           onClick={() => setativoNUMRC(false)}
           className="absolute -mt-6 -ml-6 text-2xl"
@@ -72,7 +72,7 @@ export default function NumRC({ infos, setativoNUMRC, getMateriais }) {
         </h1>
         <div className="overflow-x-auto w-full mt-10">
           <div className="flex mx-10">
-            <div className="w-[35%] mr-[5%]">
+            <div className="w-[35%] mr-[5%] ">
               <h1 className="text-[26px] font-bold mb-2">Cód Solicitação:</h1>
               <input
                 disabled={true}

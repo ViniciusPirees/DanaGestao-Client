@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { ToastContainer } from "react-toastify";
-import NavBar from "../../../components/NavBar";
-import Titulo from "../../../components/Titulo";
+import NavBar from "../../../components/NavBar/NavBar";
+import Titulo from "../../../components/NavBar/Titulo";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ImSearch } from "react-icons/im";
 import ReactPaginate from "react-paginate";
 import axios from "axios";
 import Notificacao from "../../../components/Notificacao";
 import { BsBoxArrowInDown, BsBoxArrowInUp, BsBoxArrowUp } from "react-icons/bs";
-import getLogin from "../../../components/getLogin";
+import getLogin from "../../../components/Login/getLogin";
 import { styleAll } from "../../../../css";
 
 export default function HistoricoEst() {
@@ -50,7 +50,7 @@ export default function HistoricoEst() {
 
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getHistorico`,
+        `http://${import.meta.env.VITE_IP}/getHistorico`,
         {
           params: {
             pageN: pageN,
@@ -76,7 +76,7 @@ export default function HistoricoEst() {
   const getHistoricoCount = async (props) => {
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getHistoricoCount`,
+        `http://${import.meta.env.VITE_IP}/getHistoricoCount`,
         { params: props }
       );
 

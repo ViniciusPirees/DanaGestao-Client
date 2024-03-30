@@ -74,7 +74,7 @@ export default function ConsultarMateriais() {
 
   //--COUNT
   const getMateriaisCount = async (props) => {
-    console.log(props);
+
     try {
       const res = await axios.get(
         `http://${import.meta.env.VITE_IP}:4400/getFiltroCount`,
@@ -124,7 +124,7 @@ export default function ConsultarMateriais() {
             </div>
             <div className="flex h-full">
               <button onClick={() => getMateriais()}>
-                <ImSearch className="ml-5 bg-dana text-[3.3em] p-2 rounded-md" />
+                <ImSearch className="ml-5 tablet:ml-2 bg-dana text-[3.3em] tablet:text-[2.75em] p-2 rounded-md" />
               </button>
             </div>
             <div className="flex h-full ml-10">

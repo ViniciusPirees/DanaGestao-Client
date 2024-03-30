@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import ImgPopUp from "../../../components/ImgPopUp";
+import ImgPopUp from "../../../components/Camera/ImgPopUp";
 import { useNavigate } from "react-router-dom";
 import Notificacao from "../../../components/Notificacao";
 import axios from "axios";

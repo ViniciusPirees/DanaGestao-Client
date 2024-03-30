@@ -79,9 +79,9 @@ export default async function Excel({ estman }) {
     { key: "estmax", width: 10 },
     { key: "saldo", width: 10 },
   ];
-  console.log(estman);
+
   const rows = estman.map((valor) => [
-    valor.EstManId,
+    valor.EstManNum,
     valor.EstManSta == "A" ? "Ativo" : "Inativo",
     valor.EstManDesc,
     valor.EstManAreaDesc,

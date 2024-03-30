@@ -65,13 +65,14 @@ export default class FiltrosEstCen extends React.Component {
 
     return this.state.items.map((o, i) => {
       return (
-        <div className="flex mb-5" key={i}>
-          <div className="mx-4">
+        <div className="flex mb-5 tablet:mb-3" key={i}>
+          <div className="mx-4 tablet:ml-4 tablet:mr-2">
             <select
               id="large"
+              value={o[0]}
               onChange={context.handleChangeS.bind(context, i)}
               className={
-                "block w-fit px-3 py-3 text-xl  text-gray-900 border-0 focus:-outline-offset-0 focus:outline-none " +
+                "block w-fit px-3 py-3 text-xl tablet:text-lg text-gray-900 border-0 focus:-outline-offset-0 focus:outline-none " +
                 styleAll.inputSemW
               }
             >
@@ -84,7 +85,7 @@ export default class FiltrosEstCen extends React.Component {
             <input
               onChange={context.handleChangeI.bind(context, i)}
               className={
-                "text-xl h-full py-2 px-3 focus:-outline-offset-0 border-0 " +
+                "text-xl tablet:text-lg  h-full py-2 px-3 focus:-outline-offset-0 border-0 " +
                 styleAll.input
               }
               type="text"
@@ -97,14 +98,14 @@ export default class FiltrosEstCen extends React.Component {
                 className="duration-200 hover:scale-105"
                 onClick={context.handleAdd.bind(context)}
               >
-                <FaPlus className="ml-5 bg-dana text-[3.3em] p-2 rounded-md" />
+                <FaPlus className="ml-5 tablet:ml-2 bg-dana text-[3.3em] tablet:text-[2.75em] p-2 rounded-md" />
               </button>
             ) : (
               <button
                 className="duration-200 hover:scale-105"
                 onClick={context.handleSub.bind(context, i)}
               >
-                <FaMinus className="ml-5 bg-dana text-[3.3em] p-2 rounded-md" />
+                <FaMinus className="ml-5 tablet:ml-2 bg-dana text-[3.3em] tablet:text-[2.75em] p-2 rounded-md" />
               </button>
             )}
           </div>

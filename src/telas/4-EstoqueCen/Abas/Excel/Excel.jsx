@@ -32,7 +32,7 @@ export default async function Excel({ estcen }) {
     { key: "desc", width: 60 },
     { key: "qtd", width: 15 },
   ];
-  console.log(estcen);
+
   const rows = estcen.map((valor) => [
     valor.ITEM,
     valor.DESCRIPTION,

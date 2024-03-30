@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ToastContainer } from "react-toastify";
-import NavBar from "../../../components/NavBar";
-import Titulo from "../../../components/Titulo";
+import NavBar from "../../../components/NavBar/NavBar";
+import Titulo from "../../../components/NavBar/Titulo";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ImSearch } from "react-icons/im";
 import ReactPaginate from "react-paginate";
@@ -13,9 +13,9 @@ import {
   BsBoxArrowUp,
   BsBox2,
 } from "react-icons/bs";
-import getLogin from "../../../components/getLogin";
+import getLogin from "../../../components/Login/getLogin";
 import { styleAll } from "../../../../css";
-import LoadingGet from "../../../components/LoadingGet";
+import LoadingGet from "../../../components/Loading/LoadingGet";
 
 export default function HistoricoEst() {
   const navigate = useNavigate();
@@ -63,7 +63,7 @@ export default function HistoricoEst() {
 
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getHistorico`,
+        `http://${import.meta.env.VITE_IP}/getHistorico`,
         {
           params: {
             pageN: pageN,
@@ -93,7 +93,7 @@ export default function HistoricoEst() {
   const getHistoricoCount = async (props) => {
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getHistoricoCount`,
+        `http://${import.meta.env.VITE_IP}/getHistoricoCount`,
         { params: props }
       );
 
@@ -193,7 +193,7 @@ export default function HistoricoEst() {
                 className="duration-200 hover:scale-105"
                 onClick={getHistorico}
               >
-                <ImSearch className="ml-5 bg-dana text-[3.3em] p-2 rounded-md" />
+                <ImSearch className="ml-5 tablet:ml-2 bg-dana text-[3.3em] tablet:text-[2.75em] p-2 rounded-md" />
               </button>
             </div>
             <div className="ml-5 mt-20 flex right-20 absolute">

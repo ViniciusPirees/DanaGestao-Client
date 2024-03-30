@@ -2,10 +2,10 @@ import React from 'react'
 import { ImCross } from 'react-icons/im'
 
 export default function TelaItem({ itens, setTelaItem }) {
-    console.log(itens)
+
     const renderItens = () => {
         return itens?.map((item, i) => {
-            console.log(item)
+   
             return (
 
 

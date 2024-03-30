@@ -5,27 +5,33 @@ import React, {
   useRef,
   useState,
 } from "react";
-import NavBar from "../components/NavBar";
+import NavBar from "../components/NavBar/NavBar";
 import { styleAll } from "../../css";
-import Titulo from "../components/Titulo";
+import Titulo from "../components/NavBar/Titulo";
 import axios from "axios";
 import FiltrosRC from "./FiltrosRC";
 import ReactLoading from "react-loading";
 import { SlArrowRight } from "react-icons/sl";
 import ItemTr from "./ItemTr";
-import ImgPopUp from "../components/ImgPopUp";
+import ImgPopUp from "../components/Camera/ImgPopUp";
 import { ToastContainer } from "react-toastify";
 import ReactPaginate from "react-paginate";
 import Notificacao from "../components/Notificacao";
 import { ImSearch } from "react-icons/im";
-import getLogin from "../components/getLogin";
+import getLogin from "../components/Login/getLogin";
 import { useLocation, useNavigate } from "react-router-dom";
 import { BiSortDown, BiSortUp } from "react-icons/bi";
 import { HiRefresh } from "react-icons/hi";
-import Loading from "../components/Loading";
-import LoadingGet from "../components/LoadingGet";
+import Loading from "../components/Loading/Loading";
+import LoadingGet from "../components/Loading/LoadingGet";
 import { FaFileExcel } from "react-icons/fa6";
+import { FaChartBar } from "react-icons/fa";
+import { MdOutlineEditCalendar } from "react-icons/md";
 import Excel from "./Excel/Excel";
+import Colunas from "../components/Table/Colunas";
+import { RiGridFill } from "react-icons/ri";
+import Table from "../components/Table/Tables";
+import { AiOutlineControl } from "react-icons/ai";
 export default function ControleRC() {
   const nav = useNavigate();
   const [logado, setLogado] = useState(null);
@@ -41,31 +47,51 @@ export default function ControleRC() {
   const state = useLocation().state;
   const [load2, setLoad2] = useState(false);
 
+  const localstorage = localStorage;
+  const filtrosSalvos =
+    localstorage?.filtrosControleRC == undefined
+      ? [
+          [
+            "(Consulta.REQUISITION+'/'+CONVERT(varchar,Consulta.RE_LINE_NUM))",
+            "",
+          ],
+        ]
+      : JSON.parse(localstorage?.filtrosControleRC);
+
+  const orderValSalvos =
+    localstorage?.orderValControleRC == undefined
+      ? "desc"
+      : localstorage?.orderValControleRC;
+
+  const orderSalvos =
+    localstorage?.orderControleRC == undefined
+      ? "CREATION_DATE"
+      : localstorage?.orderControleRC;
+
   //GET rCS
   const [rcs, setrcs] = useState([]);
 
   const [ativoImg, setAtivoImg] = useState(false);
-  var DataHoje = new Date();
-  const defaultValueFin = DataHoje.toLocaleDateString("en-CA");
-  DataHoje.setMonth(DataHoje.getMonth() - 1);
-  const defaultValueIni = DataHoje.toLocaleDateString("en-CA");
   const [total, setTotal] = useState(0);
   const [pageN, setPageN] = useState(0);
-  const [selecQtdPag, setSelecQtdPag] = useState(10);
-  const [order, setOrder] = useState("CREATION_DATE");
-  const [orderVal, setorderVal] = useState("desc");
-  const [filtroAll, setFiltroAll] = useState([
-    [
-      "(REQUISITION+'/'+CONVERT(varchar,RE_LINE_NUM))",
-      state?.numRC == undefined ? "" : state?.numRC.toString(),
-    ],
-  ]);
-  const [dataIni, setDataIni] = useState(
+   const qtdPagSalvoRcs =
+     localstorage?.qtdPagSalvoRcs == undefined
+       ? "10"
+       : localstorage?.qtdPagSalvoRcs;
+
+   const [selecQtdPag, setSelecQtdPag] = useState(qtdPagSalvoRcs);
+  const [order, setOrder] = useState(orderSalvos);
+  const [orderVal, setorderVal] = useState(orderValSalvos);
+  const [filtroAll, setFiltroAll] = useState(
     state?.numRC == undefined
-      ? defaultValueIni
-      : new Date(DataHoje.setFullYear(2020, 0, 1)).toLocaleDateString("en-CA")
+      ? filtrosSalvos
+      : [
+          [
+            "(Consulta.REQUISITION+'/'+CONVERT(varchar,Consulta.RE_LINE_NUM))",
+            state?.numRC.toString(),
+          ],
+        ]
   );
-  const [dataFin, setDataFin] = useState(defaultValueFin);
 
   const [img, setImg] = useState("");
 
@@ -93,7 +119,7 @@ export default function ControleRC() {
     const keyDownHandler = (event) => {
       if (event.key === "Enter") {
         event.preventDefault();
-        getRCS();
+        changePage({ selected: 0 }).then(getRCS());
       }
     };
 
@@ -102,12 +128,12 @@ export default function ControleRC() {
     return () => {
       document.removeEventListener("keydown", keyDownHandler);
     };
-  }, [pageN, selecQtdPag, filtroAll, dataIni, dataFin, order, orderVal]);
+  }, [pageN, selecQtdPag, filtroAll, order, orderVal]);
 
   useEffect(() => {
     getCooldown().then((res) => {
       var agr = new Date();
-      var ultimo5 = new Date(res.getTime() + 80000 + 180 * 60000);
+      var ultimo5 = new Date(res.getTime() + 120000 + 180 * 60000);
       if (ultimo5 <= agr) {
         getRCS();
       } else {
@@ -119,7 +145,7 @@ export default function ControleRC() {
   const getCooldown = async () => {
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getCooldownRC`
+        `http://${import.meta.env.VITE_IP}/getCooldownRC`
       );
       var ultimo = new Date(res?.data[0].CooldownRC);
       setUltimaData(ultimo);
@@ -131,7 +157,7 @@ export default function ControleRC() {
   };
 
   const [load, setLoad] = useState(false);
-  const [timer, setTimer] = useState(80);
+  const [timer, setTimer] = useState(120);
 
   const [horario, setHorario] = useState(new Date());
 
@@ -139,7 +165,7 @@ export default function ControleRC() {
     if (horario.getMinutes() == 0 && horario.getSeconds() == 3) {
       getCooldown().then((res) => {
         var agr = new Date();
-        var ultimo5 = new Date(res.getTime() + 80000 + 180 * 60000);
+        var ultimo5 = new Date(res.getTime() + 120000 + 180 * 60000);
         if (ultimo5 >= agr) {
           setLoad(true);
         }
@@ -156,14 +182,15 @@ export default function ControleRC() {
   useEffect(() => {
     if (load) {
       var agr = new Date();
-      var ultimo5 = new Date(ultimaData.getTime() + 80000 + 180 * 60000);
+      var ultimo5 = new Date(ultimaData.getTime() + 120000 + 180 * 60000);
       var seconds = (ultimo5.getTime() - agr.getTime()) / 1000;
 
       if (timer <= 0) {
         setLoad(false);
-        setTimer(80);
+        setTimer(120);
         getRCS();
         Notificacao(["sucesso", "Atualizado com sucesso!"]);
+
         return;
       }
 
@@ -175,39 +202,44 @@ export default function ControleRC() {
     }
   }, [timer, load]);
 
-  //GET ESTOQUEMAN POR DESCRICAO
+  //GET ControleRC POR DESCRICAO
   const getRCS = async () => {
     setLoad2(true);
+    localStorage.setItem("filtrosControleRC", JSON.stringify(filtroAll));
+    localStorage.setItem("orderControleRC", order);
+    localStorage.setItem("orderValControleRC", orderVal);
+    localStorage.setItem("qtdPagSalvoRcs", selecQtdPag);
     getControleRCCount({
       filtroAll,
-      dataIni,
-      dataFin,
       tabela: "Consulta",
-      tabdata: "CREATION_DATE",
     });
 
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getFiltros`,
+        `http://${import.meta.env.VITE_IP}/getFiltros`,
         {
           params: {
             pageN: pageN,
             selecQtdPag: selecQtdPag,
             filtroAll: filtroAll,
-            dataIni: dataIni,
-            dataFin: dataFin,
             tabela: "Consulta",
-            tabdata: "CREATION_DATE",
             order: order,
             orderVal: orderVal,
           },
         }
       );
-      setLoad2(false);
-      setrcs(res?.data);
-      if (res?.data == 0) {
+
+      if (res?.data?.code) {
+        setrcs([]);
         Notificacao(["atencao", "Nenhuma RC foi encontrada."]);
+      } else {
+        setrcs(res?.data);
+        if (res?.data == 0) {
+          Notificacao(["atencao", "Nenhuma RC foi encontrada."]);
+        }
       }
+
+      setLoad2(false);
     } catch (err) {
       setLoad2(false);
       Notificacao(["erro", "Erro ao buscar as rcs " + err]);
@@ -219,10 +251,14 @@ export default function ControleRC() {
   const getControleRCCount = async (props) => {
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getFiltroCount`,
+        `http://${import.meta.env.VITE_IP}/getFiltroCount`,
         { params: props }
       );
-      setTotal(res?.data[0][""]);
+      if (res?.data?.code) {
+        setTotal(0);
+      } else {
+        setTotal(res?.data[0][""]);
+      }
     } catch (err) {
       console.log(err);
       Notificacao(["erro", "Erro ao buscar as rcs " + err]);
@@ -231,7 +267,9 @@ export default function ControleRC() {
 
   const pagesTotal = Math.ceil(total / selecQtdPag);
   const dadosMat = () => {
-    return rcs?.map((rc, index) => <ItemTr rc={rc} key={index} />);
+    return rcs?.map((rc, index) => (
+      <ItemTr rc={rc} key={index} colunas={colunas} />
+    ));
   };
 
   const changePage = async ({ selected }) => {
@@ -240,18 +278,18 @@ export default function ControleRC() {
 
   const atualizaDados = async () => {
     var agr = new Date();
-    var ultimo5 = new Date(ultimaData.getTime() + 5 * 60000 + 180 * 60000);
+    var ultimo5 = new Date(ultimaData.getTime() + 3 * 60000 + 180 * 60000);
 
     if (ultimo5 <= agr) {
       try {
         const res = await axios.get(
-          `http://${import.meta.env.VITE_IP}:4400/getControleRC`
+          `http://${import.meta.env.VITE_IP}/getControleRC`
         );
 
         Notificacao(res.data);
         getCooldown().then((res) => {
           var agr = new Date();
-          var ultimo5 = new Date(res.getTime() + 80000 + 180 * 60000);
+          var ultimo5 = new Date(res.getTime() + 120000 + 180 * 60000);
           if (ultimo5 <= agr) {
             getRCS();
           } else {
@@ -260,12 +298,12 @@ export default function ControleRC() {
         });
       } catch (err) {
         console.log(err);
-        Notificacao(["erro", "Erro ao buscar as Solicitações " + err]);
+        Notificacao(["erro", "Erro ao buscar RCs " + err]);
       }
     } else {
       Notificacao([
         "atencao",
-        `Por favor, aguardar 5 minutos desde da última atualização. Última atualização foi as ${new Date(
+        `Por favor, aguardar 3 minutos desde da última atualização. Última atualização foi as ${new Date(
           ultimaData.getTime() + 180 * 60000
         ).toLocaleString()}`,
       ]);
@@ -275,32 +313,103 @@ export default function ControleRC() {
   const getExcel = async () => {
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getExcel`,
+        `http://${import.meta.env.VITE_IP}/getExcel`,
         {
           params: {
             pageN: pageN,
             selecQtdPag: selecQtdPag,
             filtroAll: filtroAll,
-            dataIni: dataIni,
-            dataFin: dataFin,
             tabela: "Consulta",
-            tabdata: "CREATION_DATE",
             order: order,
             orderVal: orderVal,
           },
         }
       );
-      console.log(res);
-      if (res?.data == 0) {
+      if (res?.data?.code) {
         Notificacao(["atencao", "Nenhuma RC foi encontrada."]);
       } else {
-        Excel({ rcs: res.data });
+        if (res?.data == 0) {
+          Notificacao(["atencao", "Nenhuma RC foi encontrada."]);
+        } else {
+          Excel({ rcs: res.data });
+        }
       }
     } catch (err) {
       Notificacao(["erro", "Erro ao buscar RCs" + err]);
       console.log(err);
     }
   };
+
+  const colunasLocal =
+    localstorage?.colunasRC == undefined
+      ? ""
+      : JSON.parse(localstorage?.colunasRC);
+
+  const tableHeaders = [
+    ["ORG.", 80, 30, true, "ORG"],
+    ["Data de Criação", 180, 50, true, "CREATION_DATE", 170],
+    ["Preparador", 150, 30, true, "PREPARER", 130],
+    ["Status", 260, 30, true, "Status", 180],
+    ["Requisição", 110, 30, true, "REQUISITION"],
+    ["Aprovador", 150, 50, true, "REQ_APPROVER", 130],
+    ["Fornecedor", 350, 50, true, "VENDOR_NAME", 300],
+    ["Nota Fiscal", 110, 50, true, "NR_NOTA_FISCAL"],
+    ["Valor NF", 110, 50, true, "VALOR_LIQUIDO"],
+    ["Data Recebimento", 180, 50, true, "DATA_RECEBIMENTO", 170],
+    ["Item", 150, 50, true, "ITEM", 200],
+    ["Descrição", 350, 50, true, "ITEM_DESCRIPTION", 350],
+    ["Qtd. Pendente", 90, 50, true, "PENDING_QUANTITY_RC"],
+    ["Valor Unid. RC", 110, 50, true, "UNIT_RC"],
+    ["Valor Total RC", 110, 50, true, "LINE_TOTAL_RC"],
+    ["Valor Pendente RC", 110, 50, true, "PENDING_TOTAL_RC"],
+    ["Valor Recebido RC", 110, 50, true, "RECEIVED_TOTAL_RC"],
+    ["Valor Unid. OC", 110, 50, true, "UNIT_OC"],
+    ["Valor Pendente OC", 110, 50, true, "PENDING_TOTAL_OC"],
+    ["Valor Pendente", 110, 50, true, "PENDENTE"],
+    ["Local", 110, 50, true, "LOCAL", 100],
+    ["Conta Cobrança", 250, 50, true, "CHARGE_ACCOUNT"],
+    ["Requisitante", 150, 50, true, "PREPARER", 130],
+    ["Justificação", 350, 50, true, "DESCRIPTION", 350],
+    ["Status REQ", 150, 50, true, "REQ_STATUS", 110],
+    ["Code", 150, 50, true, "CLOSED_CODE"],
+    ["OBC", 150, 50, true, "OBC_SDCV"],
+    ["PO_NUM", 150, 50, true, "PO_NUM"],
+  ];
+
+  const [colunas, setColunas] = useState(
+    colunasLocal == "" ? tableHeaders : colunasLocal
+  );
+
+  useEffect(() => {
+    localStorage.setItem("colunasRC", JSON.stringify(colunas));
+  }, [colunas]);
+
+  const [colAtivo, setColAtivo] = useState(false);
+
+  const refCol = useRef();
+  const refCol2 = useRef();
+
+  useEffect(() => {
+    /**
+     * Alert if clicked on outside of element
+     */
+    function handleClickOutside(event) {
+      if (
+        refCol.current &&
+        !refCol.current.contains(event.target) &&
+        refCol2.current &&
+        !refCol2.current.contains(event.target)
+      ) {
+        setColAtivo(false);
+      }
+    }
+    // Bind the event listener
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      // Unbind the event listener on clean up
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [refCol, refCol2]);
 
   return (
     <div className="flex">
@@ -315,13 +424,13 @@ export default function ControleRC() {
         theme="colored"
       />
       <NavBar ativo="6"></NavBar>
-      <div className="w-full pl-[8.5em] pr-10 ">
+      <div className="w-full pl-[8.5em] pr-10 laptop:pl-[6.5em] tablet:pl-[6.5em] ">
         {ativoImg && <ImgPopUp img={img} setAtivoImg={setAtivoImg}></ImgPopUp>}
         {load && <Loading></Loading>}
         {load2 && <LoadingGet></LoadingGet>}
-        <Titulo titulo="Controle RC" />
+        <Titulo titulo="Controle RC (311250 - 311249)" />
         <div className="">
-          <div className="my-9 flex">
+          <div className="my-9 tablet:my-5 laptop:flex desktop:flex">
             <div>
               <FiltrosRC
                 setFiltroAll={setFiltroAll}
@@ -329,46 +438,23 @@ export default function ControleRC() {
               ></FiltrosRC>
             </div>
 
-            <div className="flex h-full ml-4">
-              <h1 className="my-auto mx-4 text-2xl font-bold">Data:</h1>
-              <input
-                value={dataIni}
-                onChange={(e) => {
-                  setDataIni(e.target.value);
-                }}
-                className={
-                  "h-full py-[0.55em] px-2 w-[10.3rem] text-xl " +
-                  styleAll.inputSemW +
-                  " focus:-outline-offset-0"
-                }
-                type="date"
-              ></input>
-              <h1 className="my-auto mx-3 text-xl font-bold">até</h1>
-              <input
-                value={dataFin}
-                onChange={(e) => {
-                  setDataFin(e.target.value);
-                }}
-                className={
-                  "h-full py-[0.55em] px-2 w-[10.3rem] text-xl " +
-                  styleAll.inputSemW +
-                  " focus:-outline-offset-0"
-                }
-                type="date"
-              ></input>
-            </div>
-            <div className="flex h-full ml-4">
-              <h1 className="my-auto mx-4 text-2xl font-bold">Ordem:</h1>
+            <div className="flex h-full laptop:ml-4 desktop:ml-4 mb-12">
+              <h1 className="my-auto mx-4 text-2xl tablet:text-xl font-bold">
+                Ordem:
+              </h1>
               <select
                 id="large"
+                value={order}
                 onChange={(e) => setOrder(e.target.value)}
                 className={
-                  "block w-fit px-3 py-3 text-xl  text-gray-900 border-0 focus:-outline-offset-0 focus:outline-none " +
+                  "block w-fit px-3 py-3 text-xl tablet:text-lg text-gray-900 border-0 focus:-outline-offset-0 focus:outline-none " +
                   styleAll.inputSemW
                 }
               >
                 <option value="CREATION_DATE">Data de Criação</option>
-                <option value="REQUISITION">Requisição Cód.</option>
+                <option value="(Consulta.REQUISITION+'/'+CONVERT(varchar,Consulta.RE_LINE_NUM))">
+                  Requisição Cód.
+                </option>
                 <option value="PREPARER">Preparador</option>
                 <option value="ORG">Organização</option>
                 <option value="RE_LINE_NUM">Requisição Linha</option>
@@ -385,58 +471,66 @@ export default function ControleRC() {
                 <option value="LOCAL">Local</option>
                 <option value="CHARGE_ACCOUNT">Conta Cobrança</option>
                 <option value="PREPARER">Requisitante</option>
-                <option value="JUSTIFICATION">Justificação</option>
+                <option value="DESCRIPTION">Justificação</option>
               </select>
 
               <button
-                className="duration-200 hover:scale-105"
                 onClick={() => setorderVal(orderVal == "desc" ? "asc" : "desc")}
               >
                 {orderVal == "desc" ? (
-                  <BiSortDown className="ml-5 bg-dana text-[3.3em] p-2  rounded-md"></BiSortDown>
+                  <BiSortDown className="ml-5 tablet:ml-2 bg-dana text-[3.3em] p-2 tablet:text-[2.8em] duration-200 hover:scale-105 rounded-md"></BiSortDown>
                 ) : (
-                  <BiSortUp className="ml-5 bg-dana text-[3.3em] p-2 pt-2 rounded-md"></BiSortUp>
+                  <BiSortUp className="ml-5 tablet:ml-2 bg-dana text-[3.3em] p-2 tablet:text-[2.8em] pt-2 duration-200 hover:scale-105 rounded-md"></BiSortUp>
                 )}
               </button>
-            </div>
-          </div>
-          <div className="flex">
-            <div className="flex relative h-full ml-5 -mt-6">
-              <button
-                className="flex duration-200 hover:scale-105 bg-dana rounded-md text-2xl font-bold p-2"
-                onClick={() => {
-                  changePage({ selected: 0 }).then(getRCS());
-                }}
-              >
-                Buscar
-                <ImSearch className="my-auto mx-auto ml-3" />
-              </button>
-            </div>
-
-            <div className="flex relative h-full  ml-5 -mt-6">
-              <button
-                className="flex bg-dana rounded-md text-2xl h-full font-bold p-2 duration-200 hover:scale-105 "
-                onClick={() => {
-                  atualizaDados();
-                }}
-              >
-                Atualizar Dados
-                <HiRefresh className=" ml-1 text-3xl" />
-              </button>
-              <div>
-                <h1 className="text-xl my-auto ml-5 ">
+              <div className="h-full laptop:hidden desktop:hidden">
+                <h1 className="text-xl tablet:text-lg my-auto ml-5 ">
                   {`Última atualização: `}
                 </h1>
-                <h1 className="text-xl my-auto ml-5 ">
+                <h1 className="text-xl tablet:text-lg my-auto ml-5 ">
                   {`${new Date(
                     ultimaData.getTime() + 180 * 60000
                   ).toLocaleString()}`}
                 </h1>
               </div>
             </div>
-            <div className="flex relative h-full ml-5 -mt-6">
+          </div>
+          <div className="flex tablet:-mt-2 laptop:-mt-4 desktop:-mt-4">
+            <div className="flex relative mx-5 tablet:mx-2 h-fit -mt-6">
               <button
-                className="flex bg-[#107C41] rounded-md duration-200 hover:scale-105 text-2xl font-bold p-2"
+                className="flex bg-dana duration-200 tablet:text-xl hover:scale-105 rounded-md text-2xl font-bold p-2"
+                onClick={() => {
+                  changePage({ selected: 0 }).then(getRCS());
+                }}
+              >
+                Buscar
+                <ImSearch className="my-auto mx-auto ml-3 tablet:ml-2" />
+              </button>
+            </div>
+            <div className="laptop:flex desktop:flex relative h-full laptop:mx-5 desktop:mx-5 tablet:mx-2 -mt-6">
+              <button
+                className="flex duration-200 h-full hover:scale-105 bg-dana rounded-md tablet:text-xl text-2xl font-bold p-2"
+                onClick={() => {
+                  atualizaDados();
+                }}
+              >
+                Atualizar Dados
+                <HiRefresh className="my-auto mx-auto ml-1 tablet:text-2xl text-3xl" />
+              </button>
+              <div className="h-full tablet:hidden">
+                <h1 className="text-xl tablet:text-lg my-auto ml-5 ">
+                  {`Última atualização: `}
+                </h1>
+                <h1 className="text-xl tablet:text-lg my-auto ml-5 ">
+                  {`${new Date(
+                    ultimaData.getTime() + 180 * 60000
+                  ).toLocaleString()}`}
+                </h1>
+              </div>
+            </div>
+            <div className="flex relative h-full laptop:ml-5 desktop:ml-5 ml-2 -mt-6">
+              <button
+                className="flex bg-[#107C41] rounded-md tablet:text-xl duration-200 hover:scale-105 text-2xl font-bold p-2"
                 onClick={() => {
                   getExcel();
                 }}
@@ -445,51 +539,62 @@ export default function ControleRC() {
                 <FaFileExcel className="my-auto mx-auto ml-[0.35em]" />
               </button>
             </div>
+            <div className="flex relative h-full laptop:ml-5 desktop:ml-5 ml-4 -mt-6">
+              <button
+                className="flex bg-dana rounded-md duration-200 tablet:text-xl hover:scale-105 text-2xl font-bold p-2"
+                onClick={() => {
+                  nav("./ControleStatus");
+                }}
+              >
+                Controle Status
+                <MdOutlineEditCalendar className="my-auto mx-auto ml-[0.35em]" />
+              </button>
+            </div>
+            <div className="flex relative h-full laptop:ml-5 desktop:ml-5 ml-4 -mt-6">
+              <button
+                className="flex bg-dana rounded-md duration-200 tablet:text-xl hover:scale-105 text-2xl font-bold p-2"
+                onClick={() => {
+                  nav("./OutrasContas");
+                }}
+              >
+                Outras Contas
+                <AiOutlineControl className="my-auto mx-auto ml-[0.35em]" />
+              </button>
+            </div>
           </div>
-          <div className="overflow-x-auto w-full mt-14 mb-10 rounded-xl ">
-            <table className="table rounded-lg mx-auto overflow-x-auto w-max">
-              <thead className="">
-                <tr className="text-xl bg-dana font-extrabold">
-                  <th className="w-[5em] rounded-ss-xl">Org.</th>
-                  <th className="p-3 w-[11em]">Data de Criação</th>
-                  <th className="p-3 w-[10em]">Preparador</th>
-                  <th className="p-3  w-[12em]">Status</th>
-                  <th className="p-3 w-[5.5em]">Requisição</th>
-                  <th className="p-3  w-[10em]">Aprovador</th>
-                  <th className="p-3  w-[25em]">Fornecedor</th>
-                  <th className="p-3  w-[11em]">Item</th>
-                  <th className="p-3  w-[25em]">Descrição</th>
-                  <th className="p-3  w-[5em]">Qtd. Pendente</th>
-                  <th className="p-3  w-[9em]">Valor Unid. RC</th>
-                  <th className="p-3  w-[9em]">Valor Total RC</th>
-                  <th className="p-3  w-[9em]">Valor Pendente RC</th>
-                  <th className="p-3  w-[9em]">Valor Recebido RC</th>
-                  <th className="p-3  w-[9em]">Valor Unid. OC</th>
-                  <th className="p-3  w-[9em]">Valor Pendente OC</th>
-                  <th className="p-3  w-[9em]">Valor Pendente</th>
-                  <th className="p-3  w-[8em]">Local</th>
-                  <th className="p-3  w-[35em]">Conta Cobrança</th>
-                  <th className="p-3  w-[10em]">Requisitante</th>
-                  <th className="p-3  w-[30em] ">Justificação</th>
-                  <th className="p-3  w-[8em]">Status REQ</th>
-                  <th className="p-3  w-[5em]">Code</th>
-                  <th className="p-3  w-[5em]">OBC</th>
-                  <th className="p-3  w-[9em] rounded-se-xl">PO_NUM</th>
-                </tr>
-              </thead>
-              <tbody className="[&>*:nth-child(odd)]:bg-fundo [&>*:nth-child(even)]:bg-[#292929]">
-                {dadosMat()}
-              </tbody>
-            </table>
+
+          <div className="flex right-20 tablet:right-12 -mt-12 tablet:mt-5 absolute  ">
+            <button
+              ref={refCol}
+              className="flex bg-dana rounded-md duration-200 hover:scale-105 text-xl tablet:text-lg font-bold p-2"
+              onClick={() => {
+                setColAtivo(!colAtivo);
+              }}
+            >
+              Colunas
+              <RiGridFill className="my-auto mx-auto ml-[0.35em]" />
+            </button>
+            {colAtivo && (
+              <Colunas
+                colunas={colunas}
+                setColunas={setColunas}
+                refCol2={refCol2}
+                setColAtivo={setColAtivo}
+              ></Colunas>
+            )}
           </div>
-          <div className=" mb-14 flex float-right relative">
+
+          <div className="tablet:mt-20">
+            <Table headers={colunas} tableContent={dadosMat()}></Table>
+          </div>
+          <div className="mb-14 laptop:flex desktop:flex float-right relative">
             <ReactPaginate
               previousLabel={"Anterior"}
               nextLabel={"Próxima"}
               pageCount={pagesTotal}
               forcePage={pageN}
               onPageChange={changePage}
-              containerClassName="bg-[#3B3B3B] flex rounded-lg h-full text-xl text-white font-bold"
+              containerClassName="bg-[#3B3B3B] flex rounded-lg h-full text-xl tablet:text-lg text-white font-bold"
               previousClassName="py-2 duration-200 rounded-s-lg  hover:bg-dana"
               previousLinkClassName="py-2 px-5"
               nextClassName="py-2 duration-200 rounded-e-lg  hover:bg-dana"
@@ -506,7 +611,7 @@ export default function ControleRC() {
                 value={selecQtdPag}
                 onChange={(e) => setSelecQtdPag(e.target.value)}
                 className={
-                  " py-2 px-3 ml-5 rounded-md text-xl font-bold border-0 " +
+                  " py-2 px-3 ml-5 rounded-md text-xl tablet:text-lg tablet:float-right tablet:mt-5 font-bold border-0 " +
                   styleAll.inputSemW
                 }
               >

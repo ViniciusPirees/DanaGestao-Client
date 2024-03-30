@@ -66,7 +66,7 @@ export default class Filtros extends React.Component {
 
     return this.state.items.map((o, i) => {
       return (
-        <div className="flex mb-5" key={i}>
+        <div className="flex mb-5 tablet:mb-3" key={i}>
           <div className="mx-4">
             <select
               id="large"
@@ -93,11 +93,11 @@ export default class Filtros extends React.Component {
           <div className="flex">
             {i == 0 ? (
               <button onClick={context.handleAdd.bind(context)}>
-                <FaPlus className="ml-5 bg-dana text-[3.3em] p-2 rounded-md" />
+                <FaPlus className="ml-5 tablet:ml-2 bg-dana text-[3.3em] tablet:text-[2.75em] p-2 rounded-md" />
               </button>
             ) : (
               <button onClick={context.handleSub.bind(context, i)}>
-                <FaMinus className="ml-5 bg-dana text-[3.3em] p-2 rounded-md" />
+                <FaMinus className="ml-5 tablet:ml-2 bg-dana text-[3.3em] tablet:text-[2.75em] p-2 rounded-md" />
               </button>
             )}
           </div>

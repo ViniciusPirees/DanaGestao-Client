@@ -57,7 +57,7 @@ export default function Fornecedor() {
     getManCount([props[1], props[0], "Fornecedor"]);
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getCadastros`,
+        `http://${import.meta.env.VITE_IP}/getCadastros`,
         {
           params: {
             pageN: pageN,
@@ -80,7 +80,7 @@ export default function Fornecedor() {
   const getManCount = async (props) => {
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getCadastroCount`,
+        `http://${import.meta.env.VITE_IP}/getCadastroCount`,
         { params: props }
       );
       setTotal(res?.data[0][""]);
@@ -94,14 +94,17 @@ export default function Fornecedor() {
 
   const renderTableData = () => {
     return Fornecedores?.map((Fornecedor, index) => (
-      <tr className="text-2xl border-b-4 border-[#4f4f4f]" key={index}>
+      <tr
+        className="text-xl tablet:text-base border-b-4 border-[#4f4f4f]  "
+        key={index}
+      >
+        {" "}
         <td className="text-center border-x-4 border-[#4f4f4f] break-words flex-wrap max-w-xs p-4">
           {Fornecedor?.ForCod}
         </td>
         <td className="text-center border-r-4 border-[#4f4f4f]  break-words flex-wrap max-w-xs p-4">
           {Fornecedor?.ForDes}
         </td>
-
         <td className="text-center  border-[#4f4f4f] duration-500 hover:scale-105">
           <button className="duration-500 hover:scale-105">
             <RiDeleteBin6Fill
@@ -169,62 +172,63 @@ export default function Fornecedor() {
             <div className="flex ">
               <button
                 onClick={() => nav("/AcessoAdmin/Cadastros")}
-                className="bg-dana px-4 py-2 mx-4 font-bold text-2xl rounded-lg"
+                className="flex bg-dana duration-200 tablet:text-xl hover:scale-105 rounded-md text-2xl font-bold p-2"
               >
                 Voltar
               </button>
               <button
                 onClick={() => setTipo(1)}
-                className="bg-dana px-4 py-2 mx-4 font-bold text-2xl rounded-lg"
+                className="flex bg-dana duration-200 tablet:text-xl hover:scale-105 ml-3 rounded-md text-2xl font-bold p-2"
               >
                 Novo +
               </button>
-
-              <div className="ml-5 flex right-20 absolute z-[19]">
-                <ReactPaginate
-                  previousLabel={"Anterior"}
-                  nextLabel={"Próxima"}
-                  pageCount={pagesTotal}
-                  forcePage={pageN}
-                  onPageChange={changePage}
-                  containerClassName="bg-[#3B3B3B] flex rounded-lg text-2xl text-white font-bold "
-                  previousClassName="py-3 duration-200 rounded-s-lg  hover:bg-dana"
-                  previousLinkClassName="py-3 px-5"
-                  nextClassName="py-3 duration-200 rounded-e-lg  hover:bg-dana"
-                  nextLinkClassName="py-3 px-5"
-                  activeClassName="bg-dana"
-                  pageClassName="py-3 duration-200 hover:bg-dana"
-                  pageLinkClassName="px-4 py-3"
-                  pageRangeDisplayed={5}
-                />
-                <div className="z-[19]">
-                  <select
-                    value={selecQtdPag}
-                    onChange={(e) => setSelecQtdPag(e.target.value)}
-                    className={
-                      " p-3 ml-5 rounded-md text-2xl font-bold border-0 " +
-                      styleAll.inputSemW
-                    }
-                  >
-                    <option value={10}>10 por página</option>
-                    <option value={20}>20 por página</option>
-                    <option value={50}>50 por página</option>
-                  </select>
-                </div>
-              </div>
             </div>
-            <div className="overflow-x-auto mt-10">
-              <table className="table table-auto rounded-lg mx-auto mb-20 w-full">
-                <thead>
-                  <tr className="text-2xl bg-dana font-extrabold">
-                    <th className="w-[8%]">Cód.</th>
-                    <th className="p-3 w-">Descrição do Fornecedor</th>
-                    <th className="w-0"></th>
-                    <th className="w-0"></th>
-                  </tr>
-                </thead>
-                <tbody>{renderTableData()}</tbody>
-              </table>
+          </div>
+          <div className="overflow-x-auto mt-10">
+            <table className="table table-auto rounded-lg mx-auto mb-20 w-full">
+              <thead>
+                <tr className="text-2xl bg-dana font-extrabold">
+                  <th className="w-[8%] tablet:w-[5em]">Cód.</th>
+                  <th className="p-3 w-">Descrição do Fornecedor</th>
+                  <th className="w-0 tablet:w-[3em]"></th>
+                  <th className="w-0 rounded-se-lg tablet:w-[3em]"></th>
+                </tr>
+              </thead>
+              <tbody>{renderTableData()}</tbody>
+            </table>
+          </div>
+          <div className="mb-14 desktop:flex float-right relative">
+            <ReactPaginate
+              previousLabel={"Anterior"}
+              nextLabel={"Próxima"}
+              pageCount={pagesTotal}
+              forcePage={pageN}
+              onPageChange={changePage}
+              containerClassName="bg-[#3B3B3B] flex rounded-lg h-full text-xl tablet:text-lg text-white font-bold"
+              previousClassName="py-2 duration-200 rounded-s-lg  hover:bg-dana"
+              previousLinkClassName="py-2 px-5"
+              nextClassName="py-2 duration-200 rounded-e-lg  hover:bg-dana"
+              nextLinkClassName="py-2 px-5"
+              activeClassName="bg-dana"
+              pageClassName="py-2 duration-200 hover:bg-dana"
+              pageLinkClassName="px-4 py-2"
+              pageRangeDisplayed={3}
+              breakClassName="py-2 duration-200 hover:bg-dana"
+              breakLinkClassName="py-2 px-5"
+            />
+            <div>
+              <select
+                value={selecQtdPag}
+                onChange={(e) => setSelecQtdPag(e.target.value)}
+                className={
+                  " py-2 px-3 ml-5 rounded-md text-xl tablet:text-lg tablet:float-right tablet:mt-5 font-bold border-0 " +
+                  styleAll.inputSemW
+                }
+              >
+                <option value={10}>10 por página</option>
+                <option value={20}>20 por página</option>
+                <option value={50}>50 por página</option>
+              </select>
             </div>
           </div>
         </div>

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import DanaFoto from "./assets/DANAPNG.png";
-import NavBar from "./telas/components/NavBar";
+import NavBar from "./telas/components/NavBar/NavBar";
 import Login from "./telas/0-Login/Login";
 import { useNavigate } from "react-router-dom";
-import getLogin from "./telas/components/getLogin";
+import getLogin from "./telas/components/Login/getLogin";
 import { ToastContainer } from "react-toastify";
 
 function App() {
@@ -36,12 +36,12 @@ function App() {
         <div className="flex text-[#fff]">
           <NavBar ativo="0"></NavBar>
           <div className="w-full ">
-            <div className="flex items-center h-full justify-center ">
+            <div className="flex  h-full justify-center tablet:ml-[6em]">
               {logado ? (
                 <div>
                   <img
                     src={DanaFoto}
-                    className="w-[800px] translate-y-[50%]"
+                    className="w-[800px] translate-y-[50%] tablet:w-[600px] "
                   ></img>
                 </div>
               ) : (

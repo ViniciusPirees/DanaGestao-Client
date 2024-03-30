@@ -1,15 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
-import { SlArrowRight, SlArrowDown } from "react-icons/sl";
+
 import axios from "axios";
 
 import { BsFillImageFill } from "react-icons/bs";
 import Notificacao from "../components/Notificacao";
-import { FaBars } from "react-icons/fa6";
+import { FaBars, FaTrashCan } from "react-icons/fa6";
 
 import { FaHistory, FaExchangeAlt } from "react-icons/fa";
-import { RiDeleteBin6Fill, RiPencilFill } from "react-icons/ri";
+import { RiPencilFill } from "react-icons/ri";
 import { useNavigate } from "react-router-dom";
-import getLogin from "../components/getLogin";
+import getLogin from "../components/Login/getLogin";
+import { styleAll } from "../../css";
 
 export default function ItemTrEstMan({
   estoque,
@@ -17,6 +18,8 @@ export default function ItemTrEstMan({
   setAtivoImg,
   setImg,
   setInfosEst,
+  ativarExc,
+  colunas,
 }) {
   const refBtn = useRef();
   const refBtn2 = useRef();
@@ -29,6 +32,19 @@ export default function ItemTrEstMan({
   }, []);
 
   const [ativo, setAtivo] = useState(false);
+
+  const convertBase64ToFile = function (image) {
+    const byteString = atob(image.replace(/-/g, "+").replace(/_/g, "/"));
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i += 1) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    const newBlob = new Blob([ab], {
+      type: "image/jpeg",
+    });
+    return newBlob;
+  };
 
   function _arrayBufferToBase64(buffer) {
     var binary = "";
@@ -74,14 +90,19 @@ export default function ItemTrEstMan({
   const getAnexo = async () => {
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getAnexoEstMan`,
+        `http://${import.meta.env.VITE_IP}/getAnexoEstMan`,
         { params: { EstManId: estoque.EstManId } }
       );
 
       if (res?.data.length > 0) {
-        var buffer = res?.data[0].EstManAnexo.data;
-        var base64 = _arrayBufferToBase64(buffer);
-        setImg(base64);
+        let imgsArray = [];
+        res?.data?.forEach((file) => {
+          var buffer = file.EstManAnexo.data;
+          var base64 = _arrayBufferToBase64(buffer);
+          var image = convertBase64ToFile(base64);
+          imgsArray.push(image);
+        });
+        setImg(imgsArray);
         setAtivoImg(true);
       } else {
         Notificacao([
@@ -97,143 +118,104 @@ export default function ItemTrEstMan({
 
   return (
     <>
-      <tr className="text-xl border-b-4  border-[#4f4f4f] " key={index}>
-        <td
-          className={
-            "text-center border-l-4 border-[#0000]  break-words  flex-wrap " +
-            bgtr()
-          }
-        >
-          <button
-            ref={refBtn2}
-            onClick={() => setAtivo(!ativo)}
-            className="flex mx-2 duration-200 hover:brightness-75 "
-          >
-            <FaBars className="bg-dana p-2 text-4xl rounded-md my-auto text-[#fff]" />
-          </button>
-          {ativo && (
-            <>
-              <div
-                ref={refBtn}
-                className="absolute mt-[-1.78em] rounded-lg ml-[2.25em]  bg-[#fff]"
-              >
-                {nivel > 1 && (
+      <tr className="text-base laptop:text-sm tablet:text-sm border-[#4f4f4f] " key={index}>
+        {colunas.map((col, i) => {
+          if (col[3]) {
+            if (col[4] == "") {
+              return (
+                <td key={col[4]} className={styleAll.tabletd + bgtr()}>
                   <button
-                    onClick={() => {
-                      setInfosEst(estoque);
-                      setAtivo(false);
-                    }}
-                    className="text-fundo flex font-bold text-xl rounded-lg py-2 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
+                    ref={refBtn2}
+                    onClick={() => setAtivo(!ativo)}
+                    className="flex mx-2 duration-200 hover:brightness-75 "
                   >
-                    <FaExchangeAlt className="text-xl my-auto mr-2 " />{" "}
-                    Movimentar Saldo
+                    <FaBars className="bg-dana desktop:p-2 desktop:text-4xl laptop:text-3xl tablet:text-3xl laptop:p-[0.38rem] tablet:p-[0.38rem] rounded-md my-auto text-[#fff]" />
                   </button>
-                )}
-                <button
-                  onClick={() => {
-                    nav("./Historico", { state: estoque });
-                  }}
-                  className="text-fundo flex font-bold text-xl rounded-lg py-2 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
-                >
-                  <FaHistory className="text-xl my-auto mr-2 " /> Histórico
-                </button>
-                {nivel == 3 && (
-                  <button
-                    onClick={() => {
-                      nav("./ItemEstoque", {
-                        state: { tipo: 2, val: estoque },
-                      });
-                    }}
-                    className="text-fundo flex font-bold text-xl rounded-lg py-2 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
-                  >
-                    <RiPencilFill className="text-xl my-auto mr-2 " /> Editar
-                  </button>
-                )}
+                  {ativo && (
+                    <>
+                      <div
+                        ref={refBtn}
+                        className="absolute z-[3] mt-[-2.25em] rounded-lg ml-[2.8em] laptop:ml-[2.45em] tablet:ml-[2.45em] laptop:mt-[-1.95em] tablet:mt-[-1.95em] bg-[#fff]"
+                      >
+                        {nivel > 1 && (
+                          <button
+                            onClick={() => {
+                              setInfosEst(estoque);
+                              setAtivo(false);
+                            }}
+                            className="text-fundo flex font-bold text-lg rounded-t-lg py-1 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
+                          >
+                            <FaExchangeAlt className="text-lg my-auto mr-2 " />{" "}
+                            Movimentar Saldo
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            nav("./Movimentacao", {
+                              state: { id: estoque.EstManNum },
+                            });
+                          }}
+                          className="text-fundo flex font-bold text-lg py-1 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
+                        >
+                          <FaHistory className="text-lg my-auto mr-2 " />{" "}
+                          Histórico
+                        </button>
+                        {nivel > 1 && (
+                          <button
+                            onClick={() => {
+                              nav("./ItemEstoque", {
+                                state: { tipo: 2, val: estoque },
+                              });
+                            }}
+                            className="text-fundo flex font-bold text-lg  py-1 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
+                          >
+                            <RiPencilFill className="text-lg my-auto mr-2 " />{" "}
+                            Editar
+                          </button>
+                        )}
 
-                <button
-                  onClick={() => {
-                    getAnexo();
-                    setAtivo(false);
-                  }}
-                  className="text-fundo flex font-bold text-xl rounded-lg py-2 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
-                >
-                  <BsFillImageFill className="text-xl my-auto mr-2 " /> Anexo
-                </button>
-              </div>
-            </>
-          )}
-        </td>
-        <td
-          className={
-            "text-center border-x-4 border-[#4f4f4f] p-4 break-words  flex-wrap " +
-            bgtr()
+                        <button
+                          onClick={() => {
+                            getAnexo();
+                            setAtivo(false);
+                          }}
+                          className="text-fundo flex font-bold text-lg  py-1 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
+                        >
+                          <BsFillImageFill className="text-lg my-auto mr-2 " />{" "}
+                          Anexo
+                        </button>
+                        {nivel > 2 && (
+                          <button
+                            onClick={() => {
+                              setAtivo(false);
+                              ativarExc({ estman: estoque });
+                            }}
+                            className="text-fundo flex font-bold text-lg rounded-b-lg py-1 px-3 w-full duration-200 hover:bg-[#a0a0a0] "
+                          >
+                            <FaTrashCan className="text-lg my-auto mr-2 " />{" "}
+                            Excluir
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </td>
+              );
+            } else if (col[4] == "EstManSta") {
+              return (
+                <td key={col[4]} className={styleAll.tabletd + bgtr()}>
+                  {estoque?.[col[4]] == "A" ? "Ativo" : "Inativo"}
+                </td>
+              );
+            } else {
+              return (
+                <td key={col[4]} className={styleAll.tabletd + bgtr()}>
+                  {estoque?.[col[4]]}
+                </td>
+              );
+            }
           }
-        >
-          {estoque?.EstManId}
-        </td>
-        <td
-          className={
-            "text-center border-x-4 border-[#4f4f4f]  break-words  flex-wrap " +
-            bgtr()
-          }
-        >
-          {estoque?.EstManSta == "A" ? "Ativo" : "Inativo"}
-        </td>
-        <td
-          className={
-            "text-center border-x-4 border-[#4f4f4f]  break-words  flex-wrap " +
-            bgtr()
-          }
-        >
-          {estoque?.EstManDesc}
-        </td>
-        <td
-          className={
-            "text-center border-x-4 border-[#4f4f4f]  break-words  flex-wrap " +
-            bgtr()
-          }
-        >
-          {estoque?.EstManAreaDesc}
-        </td>
-        <td
-          className={
-            "text-center border-x-4 border-[#4f4f4f]  break-words  flex-wrap " +
-            bgtr()
-          }
-        >
-          {estoque?.EstManTipMatDesc}
-        </td>
-        <td
-          className={
-            "text-center border-x-4 border-[#4f4f4f]  break-words  flex-wrap " +
-            bgtr()
-          }
-        >
-          {estoque?.EstManLoc}
-        </td>
-        <td
-          className={
-            "text-center border-x-4 border-[#4f4f4f]  break-words  flex-wrap " +
-            bgtr()
-          }
-        >
-          {estoque?.EstManEstMin}
-        </td>
-        <td
-          className={
-            "text-center border-x-4 border-[#4f4f4f]  break-words  flex-wrap " +
-            bgtr()
-          }
-        >
-          {estoque?.EstManEstMax}
-        </td>
-        <td
-          className={
-            "text-center border-[#4f4f4f]  break-words  flex-wrap " + bgtr()
-          }
-        >
-          {estoque?.EstManSaldo}
-        </td>
+        })}
       </tr>
     </>
   );

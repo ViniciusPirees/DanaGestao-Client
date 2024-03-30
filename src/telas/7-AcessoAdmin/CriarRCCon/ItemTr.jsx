@@ -75,10 +75,10 @@ export default function ItemTr({ conserto, index, setAtivoImg, setImg, setTelaIt
         { params: { conCod } }
       );
       if (res?.data.length > 0) {
-        console.log(res?.data);
+  
         var buffer = res?.data[0].ConAnexo.data;
         var base64 = _arrayBufferToBase64(buffer);
-        console.log(base64);
+      
         setImg(base64);
         setAtivoImg(true);
       } else {

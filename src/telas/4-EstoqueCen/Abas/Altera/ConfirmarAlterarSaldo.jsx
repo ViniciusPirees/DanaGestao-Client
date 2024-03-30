@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import { ToastContainer } from 'react-toastify'
 import NavBar from '../../../components/NavBar'
-import Titulo from '../../../components/Titulo'
+import Titulo from '../../../components/NavBar/Titulo'
 import axios from 'axios'
 import Notificacao from '../../../components/Notificacao'
-import getLogin from '../../../components/getLogin'
+import getLogin from '../../../components/Login/getLogin"'
 
 export default function ConfirmarAlterarSaldo({ setAtivo, infosEst, saldo, setInfosEst }) {
     var usuCod = ''
@@ -20,7 +20,7 @@ export default function ConfirmarAlterarSaldo({ setAtivo, infosEst, saldo, setIn
     const confirmar = async () => {
         try {
             const res = await axios.post(
-                `http://${import.meta.env.VITE_IP}:4400/alteraSaldo`,
+                `http://${import.meta.env.VITE_IP}/alteraSaldo`,
                 {
                     params: {
                         saldo: saldo,

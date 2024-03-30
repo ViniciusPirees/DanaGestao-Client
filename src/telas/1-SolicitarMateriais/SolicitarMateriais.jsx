@@ -1,18 +1,19 @@
 import React, { useEffect, useRef, useState } from "react";
-import NavBar from "../components/NavBar";
+import NavBar from "../components/NavBar/NavBar";
 import { styleAll } from "../../css";
-import Titulo from "../components/Titulo";
+import Titulo from "../components/NavBar/Titulo";
 import axios from "axios";
-import SearchDropdown from "../components/SearchDropdown";
+import SearchDropdown from "../components/Dropdowns/SearchDropdown";
 import "react-toastify/dist/ReactToastify.css";
 import Notificacao from "../components/Notificacao";
 import { BsFillCameraFill } from "react-icons/bs";
-import CamPopUp from "../components/CamPopUp";
+import CamPopUp from "../components/Camera/CamPopUp";
 import ItensMateriais from "./ItensMateriais";
 import { ToastContainer, toast } from "react-toastify";
 import ConfirmarPopUp from "./ConfirmarPopUp";
 import { useLocation, useNavigate } from "react-router-dom";
-import getLogin from "../components/getLogin";
+import getLogin from "../components/Login/getLogin";
+import LoadingGet from "../components/Loading/LoadingGet";
 
 export default function SolicitarMateriais() {
   const nav = useNavigate();
@@ -51,7 +52,8 @@ export default function SolicitarMateriais() {
 
   useEffect(() => {
     //DESCRICAO MUDAR
-    if (maquina[0]?.toString.length > 0) {
+
+    if (maquina[0]?.length > 0) {
       setDescricao(`${maquina[0]} - ${maquina[1]}`);
     } else {
       setDescricao("");
@@ -62,7 +64,7 @@ export default function SolicitarMateriais() {
     const getMaquinas = async () => {
       try {
         const res = await axios.get(
-          `http://${import.meta.env.VITE_IP}:4400/GetMaquinas`
+          `http://${import.meta.env.VITE_IP}/GetMaquinas`
         );
         setMaquinas(res.data);
       } catch (err) {
@@ -84,7 +86,13 @@ export default function SolicitarMateriais() {
     const getSolic = async () => {
       try {
         const res = await axios.get(
-          `http://${import.meta.env.VITE_IP}:4400/GetSolic`
+          `http://${import.meta.env.VITE_IP}/getSearchDrop`,
+          {
+            params: {
+              tabela: "Manutentor",
+              order: "ManNome",
+            },
+          }
         );
         setSolicitantes(res.data);
       } catch (err) {
@@ -99,9 +107,9 @@ export default function SolicitarMateriais() {
   const [observacao, setObservacao] = useState("");
 
   //ANEXO POPUP
+  const [anexoArray, setAnexoArray] = useState([]);
   const [anexotela, setAnexoTela] = useState(false);
-  const [anexofile, setAnexoFile] = useState(null);
-
+  const [load, setLoad] = useState(false);
   //ITEMS
 
   const [items, setItems] = useState([]);
@@ -113,25 +121,31 @@ export default function SolicitarMateriais() {
 
   const criarSol = async () => {
     if (maquina.length == 0) {
+      setLoad(false);
       return Notificacao(["erro", `Necessário selecionar Máquina.`]);
     }
     if (descricao.length == 0) {
+      setLoad(false);
       return Notificacao(["erro", `Necessário digitar Descrição.`]);
     }
 
     if (os.toString().length == 0) {
+      setLoad(false);
       return Notificacao(["erro", `Necessário digitar OS.`]);
     }
 
     if (os.toString().length != 6) {
+      setLoad(false);
       return Notificacao(["erro", `Necessário que a OS tenha 6 dígitos.`]);
     }
 
     if (solicitante.length == 0) {
+      setLoad(false);
       return Notificacao(["erro", `Necessário selecionar Solicitante.`]);
     }
 
     if (items.length == 0) {
+      setLoad(false);
       return Notificacao(["erro", `Necessário inserir os items.`]);
     }
 
@@ -143,16 +157,20 @@ export default function SolicitarMateriais() {
     });
 
     if (verifica[0]) {
+      setLoad(false);
       return Notificacao(["erro", `Verifique as informaçoes dos items`]);
     }
 
     const formdata = new FormData();
-    formdata.append("image", anexofile);
+
+    anexoArray.forEach((file, i) => {
+      formdata.append("image", file, i);
+    });
 
     if (state?.tipo == 2) {
       try {
         const res = await axios.post(
-          `http://${import.meta.env.VITE_IP}:4400/EditarSolic`,
+          `http://${import.meta.env.VITE_IP}/EditarSolic`,
           formdata,
           {
             params: {
@@ -163,7 +181,6 @@ export default function SolicitarMateriais() {
               solicitante: solicitante,
               observacao: observacao,
               items: items,
-
               matCod: solic.MatSolicitacao,
               usuAlt: usuAlt,
             },
@@ -172,13 +189,14 @@ export default function SolicitarMateriais() {
 
         nav("/ConsultarSolicitacao");
       } catch (err) {
+        setLoad(false);
         Notificacao(["erro", "Erro ao criar Solicitação"]);
         console.log(err);
       }
     } else {
       try {
         const res = await axios.post(
-          `http://${import.meta.env.VITE_IP}:4400/CriarSolic`,
+          `http://${import.meta.env.VITE_IP}/CriarSolic`,
           formdata,
           {
             params: {
@@ -188,13 +206,14 @@ export default function SolicitarMateriais() {
               os: os,
               solicitante: solicitante,
               observacao: observacao,
-
               items: items,
             },
           }
         );
+
         nav("/ConsultarSolicitacao");
       } catch (err) {
+        setLoad(false);
         Notificacao(["erro", "Erro ao criar Solicitação"]);
         console.log(err);
       }
@@ -240,14 +259,18 @@ export default function SolicitarMateriais() {
   const getAnexo = async () => {
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getAnexo`,
+        `http://${import.meta.env.VITE_IP}/getAnexo`,
         { params: { matCod: solic?.MatSolicitacao } }
       );
       if (res?.data.length > 0) {
-        var buffer = res?.data[0].MatAnexo.data;
-        var base64 = _arrayBufferToBase64(buffer);
-        var image = convertBase64ToFile(base64);
-        setAnexoFile(image);
+        let imgsArray = [];
+        res?.data?.forEach((file) => {
+          var buffer = file.MatAnexo.data;
+          var base64 = _arrayBufferToBase64(buffer);
+          var image = convertBase64ToFile(base64);
+          imgsArray.push(image);
+        });
+        setAnexoArray(imgsArray);
       }
     } catch (err) {
       console.log(err);
@@ -289,6 +312,7 @@ export default function SolicitarMateriais() {
     const keyDownHandler = (event) => {
       if (event.key === "Enter") {
         event.preventDefault();
+        setLoad(true);
         criarSol();
       }
     };
@@ -306,12 +330,10 @@ export default function SolicitarMateriais() {
     solicitante,
     observacao,
     items,
-
+    anexoArray,
     solic,
     usuAlt,
   ]);
-
-  const [hisAtivo, setHisAtivo] = useState(false);
 
   return (
     <>
@@ -328,50 +350,54 @@ export default function SolicitarMateriais() {
 
       <div className="flex text-[#fff]">
         <NavBar ativo="1"></NavBar>
-        <div className="w-full ml-[8.5em] mr-10">
+        <div className="w-full laptop:pl-[6.5em] desktop:ml-[8.5em] laptop:pr-10 desktop:mr-10 tablet:pl-[6.5em] tablet:pr-10">
           <div className="">
             {anexotela && (
               <CamPopUp
                 setAnexoTela={setAnexoTela}
-                setAnexoFile={setAnexoFile}
-                anexofile={anexofile}
+                anexoArray={anexoArray}
+                setAnexoArray={setAnexoArray}
               ></CamPopUp>
             )}
-            {ativoConfirm && (
-              <ConfirmarPopUp
-                params={params}
-                anexo={anexofile}
-                setConfirm={setConfirm}
-              ></ConfirmarPopUp>
-            )}
+
+            {load && <LoadingGet></LoadingGet>}
           </div>
           <Titulo titulo="Solicitar Materiais" />
-          <div className="w-[97%] mx-auto ">
-            <div className="flex mr-3">
+          <div className="laptop:w-[97%] desktop:w-[97%] w-full mx-auto ">
+            <div className="laptop:flex desktop:flex mx-4 laptop:mx-0 desktop:mx-0 tablet:mx-0 laptop:mr-3 desktop:mr-3 tablet:mr-3">
               {state?.tipo != 2 ? (
                 <>
-                  <div className="mt-8 ml-3 w-[15%]">
-                    <h1 className="text-[26px]  font-bold mb-2">Data:</h1>
-                    <input
-                      disabled
-                      type="date"
-                      defaultValue={defaultValue}
-                      className={styleAll.inputSoWDis}
-                      placeholder=""
-                    />
-                  </div>
+                  <div className="flex ">
+                    <div className="laptop:mt-8 desktop:mt-8 tablet:mt-8 mt-4 laptop:ml-3 desktop:ml-3 tablet:ml-3 laptop:w-[45%] desktop:w-[45%] tablet:w-[30%]">
+                      <h1 className="text-xl laptop:text-[26px] desktop:text-[26px] tablet:text-[26px] font-bold mb-1 laptop:mb-2 desktop:mb-2 tablet:mb-2">
+                        Data:
+                      </h1>
+                      <input
+                        disabled
+                        type="date"
+                        defaultValue={defaultValue}
+                        className={styleAll.inputSoWDis}
+                        placeholder=""
+                      />
+                    </div>
 
-                  <div className="mt-8 ml-12 w-[20%]">
-                    <h1 className="text-[26px] font-bold mb-2">Máquina:</h1>
-                    <SearchDropdown
-                      options={maquinas}
-                      setValue={setMaquina}
-                      opt={1}
-                      defValue={""}
-                    ></SearchDropdown>
+                    <div className="mt-4 laptop:mt-8 desktop:mt-8 laptop:ml-12 desktop:ml-12 tablet:mt-8 tablet:ml-12 laptop:w-[55%] desktop:w-[55%] tablet:w-[70%]">
+                      <h1 className="text-xl laptop:text-[26px] desktop:text-[26px] tablet:text-[26px] font-bold mb-1 laptop:mb-2 desktop:mb-2 tablet:mb-2">
+                        Máquina:
+                      </h1>
+                      <SearchDropdown
+                        options={maquinas}
+                        setValue={setMaquina}
+                        opt={1}
+                        defValue={""}
+                        textTablet={'tablet:text-2xl laptop:text-2xl'}
+                      ></SearchDropdown>
+                    </div>
                   </div>
-                  <div className="mt-8 ml-12 w-[65%] ">
-                    <h1 className="text-[26px]  font-bold mb-2">Descrição:</h1>
+                  <div className="mt-4 laptop:mt-8 desktop:mt-8 laptop:ml-12 desktop:ml-12 laptop:w-[65%] desktop:w-[65%] tablet:mt-8 tablet:ml-3 tablet:w-[98%] ">
+                    <h1 className="text-xl laptop:text-[26px] desktop:text-[26px] tablet:text-[26px] font-bold mb-1 laptop:mb-2 desktop:mb-2 tablet:mb-2 ">
+                      Descrição:
+                    </h1>
                     <input
                       ref={ref}
                       className={styleAll.inputSoWDis}
@@ -385,8 +411,8 @@ export default function SolicitarMateriais() {
               ) : (
                 <>
                   <div className="w-full">
-                    <div className="flex">
-                      <div className="mt-8 ml-3 w-[15%]">
+                    <div className="laptop:flex desktop:flex">
+                      <div className="mt-8 ml-3 tablet:w-[25%] laptop:w-[15%]">
                         <h1 className="text-[26px]  font-bold mb-2">
                           Solicitação:
                         </h1>
@@ -398,58 +424,65 @@ export default function SolicitarMateriais() {
                           placeholder=""
                         />
                       </div>
-                      <div className="mt-8 ml-12 w-[20%]">
-                        <h1 className="text-[26px]  font-bold mb-2">Data:</h1>
-                        <input
-                          type="text"
-                          defaultValue={`${solic?.MatData.toString().substring(
-                            8,
-                            10
-                          )}/${solic?.MatData.toString().substring(
-                            5,
-                            7
-                          )}/${solic?.MatData.toString().substring(
-                            0,
-                            4
-                          )} - ${solic?.MatData.toString().substring(11, 19)}`}
-                          disabled
-                          className={styleAll.inputSoWDis}
-                          placeholder=""
-                        />
-                      </div>
-                      <div className="mt-8 ml-12 w-[20%]">
-                        <h1 className="text-[26px]  font-bold mb-2">
-                          Data Alteração:
-                        </h1>
-                        <input
-                          type="text"
-                          defaultValue={`${solic?.MatDataAlt.toString().substring(
-                            8,
-                            10
-                          )}/${solic?.MatDataAlt.toString().substring(
-                            5,
-                            7
-                          )}/${solic?.MatDataAlt.toString().substring(
-                            0,
-                            4
-                          )} - ${solic?.MatDataAlt.toString().substring(
-                            11,
-                            19
-                          )}`}
-                          disabled
-                          className={styleAll.inputSoWDis}
-                          placeholder=""
-                        />
+                      <div className="flex laptop:w-[100%] desktop:w-[100%]">
+                        <div className="mt-8 laptop:ml-12 desktop:ml-12 tablet:ml-3 laptop:w-[30%] desktop:w-[20%] tablet:w-[50%]">
+                          <h1 className="text-[26px]  font-bold mb-2">Data:</h1>
+                          <input
+                            type="text"
+                            defaultValue={`${solic?.MatData.toString().substring(
+                              8,
+                              10
+                            )}/${solic?.MatData.toString().substring(
+                              5,
+                              7
+                            )}/${solic?.MatData.toString().substring(
+                              0,
+                              4
+                            )} - ${solic?.MatData.toString().substring(
+                              11,
+                              19
+                            )}`}
+                            disabled
+                            className={styleAll.inputSoWDis}
+                            placeholder=""
+                          />
+                        </div>
+
+                        <div className="mt-8 ml-12 laptop:w-[30%] desktop:w-[20%] tablet:w-[50%]">
+                          <h1 className="text-[26px]  font-bold mb-2">
+                            Data Alteração:
+                          </h1>
+                          <input
+                            type="text"
+                            defaultValue={`${solic?.MatDataAlt.toString().substring(
+                              8,
+                              10
+                            )}/${solic?.MatDataAlt.toString().substring(
+                              5,
+                              7
+                            )}/${solic?.MatDataAlt.toString().substring(
+                              0,
+                              4
+                            )} - ${solic?.MatDataAlt.toString().substring(
+                              11,
+                              19
+                            )}`}
+                            disabled
+                            className={styleAll.inputSoWDis}
+                            placeholder=""
+                          />
+                        </div>
                       </div>
                     </div>
                     <div className="flex">
-                      <div className="mt-8 ml-3 w-[25%]">
+                      <div className="mt-8 ml-3 w-[25%] tablet:w-[35%]">
                         <h1 className="text-[26px] font-bold mb-2">Máquina:</h1>
                         <SearchDropdown
                           options={maquinas}
                           setValue={setMaquina}
                           opt={1}
                           defValue={solic?.MatMaquina}
+                          textTablet={'tablet:text-2xl laptop:text-2xl'}
                         ></SearchDropdown>
                       </div>
                       <div className="mt-8 ml-12 w-[75%] ">
@@ -469,56 +502,74 @@ export default function SolicitarMateriais() {
                 </>
               )}
             </div>
-            <div className="flex mr-3">
-              <div className="mt-8 ml-3 w-[11%]">
-                <h1 className="text-[26px]  font-bold mb-2">OS:</h1>
-                <input
-                  type="number"
-                  value={os}
-                  className={styleAll.inputSoW}
-                  placeholder=""
-                  maxLength={"6"}
-                  onChange={(e) => {
-                    if (e.target.value.length > 6) {
-                      setOS(e.target.value.slice(0, 6));
-                    } else {
-                      setOS(e.target.value);
-                    }
-                  }}
-                />
+            <div className="laptop:flex desktop:flex  mx-4 laptop:mx-0 desktop:mx-0 tablet:mx-0 laptop:mr-3 desktop:mr-3 tablet:mr-3">
+              <div className="flex laptop:w-[40%] desktop:w-[40%]">
+                <div className="laptop:mt-8 desktop:mt-8 tablet:mt-8 mt-4 laptop:ml-3 desktop:ml-3 tablet:ml-3 laptop:w-[35%] desktop:w-[35%] tablet:w-[35%]">
+                  <h1 className="text-xl laptop:text-[26px] desktop:text-[26px] tablet:text-[26px] font-bold mb-1 laptop:mb-2 desktop:mb-2 tablet:mb-2 ">
+                    OS:
+                  </h1>
+                  <input
+                    type="number"
+                    value={os}
+                    className={styleAll.inputSoW}
+                    placeholder=""
+                    maxLength={"6"}
+                    onChange={(e) => {
+                      if (e.target.value.length > 6) {
+                        setOS(e.target.value.slice(0, 6));
+                      } else {
+                        setOS(e.target.value);
+                      }
+                    }}
+                  />
+                </div>
+                <div className="laptop:mt-8 desktop:mt-8 tablet:mt-8 mt-4 laptop:ml-12 desktop:ml-12 tablet:ml-12 laptop:w-[55%] desktop:w-[55%] tablet:w-[55%]">
+                  <h1 className="text-xl laptop:text-[26px] desktop:text-[26px] tablet:text-[26px] font-bold mb-1 laptop:mb-2 desktop:mb-2 tablet:mb-2 ">
+                    Solicitante:
+                  </h1>
+                  <SearchDropdown
+                    options={solicitantes}
+                    setValue={setSolicitante}
+                    opt={4}
+                    defValue={state?.tipo != 2 ? "" : solic?.MatSolicitanteDesc}
+                    textTablet={'tablet:text-2xl laptop:text-2xl'}
+                  ></SearchDropdown>
+                </div>
               </div>
-              <div className="mt-8 ml-12 w-[33%]">
-                <h1 className="text-[26px] font-bold mb-2">Solicitante:</h1>
-                <SearchDropdown
-                  options={solicitantes}
-                  setValue={setSolicitante}
-                  opt={2}
-                  defValue={state.tipo != 2 ? "" : solic?.MatSolicitanteDesc}
-                ></SearchDropdown>
-              </div>
-
-              <div className="mt-8 ml-12 w-[45%] ">
-                <h1 className="text-[26px]  font-bold mb-2">Observação:</h1>
-                <input
-                  className={styleAll.inputSoW}
-                  placeholder=""
-                  value={observacao}
-                  onChange={(e) => setObservacao(e.target.value)}
-                />
-              </div>
-              <div className="mt-20 ml-12 w-[11%] ">
-                <button
-                  className="p-3 text-2xl flex w-full font-bold duration-200 hover:scale-105 bg-dana text-center rounded-md"
-                  placeholder=""
-                  onClick={() => setAnexoTela(true)}
-                >
-                  <BsFillCameraFill className="mr-2 ml-3 text-3xl"></BsFillCameraFill>
-                  Anexo
-                </button>
-                <div className="">
-                  {anexofile?.size > 0 && (
-                    <h1 className="text-center mt-2">Imagem Anexada</h1>
-                  )}
+              <div className="flex laptop:w-[60%] desktop:w-[60%]">
+                <div className="laptop:mt-8 desktop:mt-8 tablet:mt-8 mt-4 laptop:ml-12 desktop:ml-12 tablet:ml-3 laptop:w-[80%] desktop:w-[80%] tablet:w-[80%] ">
+                  <h1 className="text-xl laptop:text-[26px] desktop:text-[26px] tablet:text-[26px] font-bold mb-1 laptop:mb-2 desktop:mb-2 tablet:mb-2 ">
+                    Observação:
+                  </h1>
+                  <input
+                    className={styleAll.inputSoW}
+                    placeholder=""
+                    value={observacao}
+                    onChange={(e) => {
+                      if (e.target.value.length > 65535) {
+                        setObservacao(e.target.value.slice(0, 65535));
+                      } else {
+                        setObservacao(e.target.value);
+                      }
+                    }}
+                  />
+                </div>
+                <div className="laptop:mt-16 desktop:mt-16 tablet:mt-16 mt-4 laptop:ml-12 desktop:ml-12 tablet:ml-12 laptop:w-[20%] desktop:w-[15%] tablet:w-[20%] ">
+                  <button
+                    className="p-3 text-2xl flex w-full font-bold duration-200 hover:scale-105 bg-dana text-center rounded-md"
+                    placeholder=""
+                    onClick={() => setAnexoTela(true)}
+                  >
+                    <div className="flex mx-auto">
+                      <BsFillCameraFill className="mr-2 text-3xl"></BsFillCameraFill>
+                      Anexo
+                    </div>
+                  </button>
+                  <div className="">
+                    {anexoArray?.length > 0 && (
+                      <h1 className="text-center mt-2">Imagem Anexada</h1>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -526,14 +577,17 @@ export default function SolicitarMateriais() {
             <div className="">
               <ItensMateriais
                 setItems={setItems}
-                itemsRec={state.itens}
+                itemsRec={state?.itens}
               ></ItensMateriais>
             </div>
             <hr className="border-2 mt-6" />
             <div className="mt-10 flex items-center justify-center pb-20">
               <button
                 className="bg-[#1C85C7] duration-200 hover:scale-105 text-3xl mx-auto font-bold p-3 rounded-lg"
-                onClick={() => criarSol()}
+                onClick={() => {
+                  setLoad(true);
+                  criarSol();
+                }}
               >
                 {state?.tipo == 2
                   ? "Editar Solicitação"

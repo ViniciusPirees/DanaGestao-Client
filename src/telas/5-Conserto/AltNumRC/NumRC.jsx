@@ -3,7 +3,7 @@ import { ImCross } from "react-icons/im";
 import { styleAll } from "../../../css";
 import Notificacao from "../../components/Notificacao";
 import axios from "axios";
-import getLogin from "../../components/getLogin";
+import getLogin from "../../components/Login/getLogin";
 import InputMask from "react-input-mask";
 
 export default function NumRC({ infos, setativoNUMRC, getConserto }) {
@@ -21,7 +21,7 @@ export default function NumRC({ infos, setativoNUMRC, getConserto }) {
     if (numRC.length >= 8) {
       try {
         const res = await axios.post(
-          `http://${import.meta.env.VITE_IP}:4400/alteraNRC`,
+          `http://${import.meta.env.VITE_IP}/alteraNRC`,
           {
             params: {
               conCod: infos.ConCod,

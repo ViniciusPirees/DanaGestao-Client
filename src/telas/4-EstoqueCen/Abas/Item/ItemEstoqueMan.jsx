@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from "react";
-import NavBar from "../../../components/NavBar";
-import Titulo from "../../../components/Titulo";
-import SearchDropdown from "../../../components/SearchDropdown";
+import NavBar from "../../../components/NavBar/NavBar";
+import Titulo from "../../../components/NavBar/Titulo";
+import SearchDropdown from "../../../components/Dropdowns/SearchDropdown";
 import axios from "axios";
-import CamPopUp from "../../../components/CamPopUp";
+import CamPopUp from "../../../components/Camera/CamPopUp";
 import { BsFillCameraFill } from "react-icons/bs";
 import { ToastContainer } from "react-toastify";
 import { useLocation, useNavigate } from "react-router-dom";
 import ConfirmarEstPopUp from "./ConfirmarEstPopUp";
 import Notificacao from "../../../components/Notificacao";
-import Dropdown from "../../../components/Dropdown";
-import getLogin from "../../../components/getLogin";
+import Dropdown from "../../../components/Dropdowns/Dropdown";
+import getLogin from "../../../components/Login/getLogin";
 import { styleAll } from "../../../../css";
 
 export default function ItemEstoqueMan() {
@@ -37,7 +37,7 @@ export default function ItemEstoqueMan() {
     const getTipMat = async () => {
       try {
         const res = await axios.get(
-          `http://${import.meta.env.VITE_IP}:4400/GetSearchDrop`,
+          `http://${import.meta.env.VITE_IP}/GetSearchDrop`,
           {
             params: {
               tabela: 'TipoMaterial',
@@ -61,7 +61,7 @@ export default function ItemEstoqueMan() {
     const getArea = async () => {
       try {
         const res = await axios.get(
-          `http://${import.meta.env.VITE_IP}:4400/GetArea`
+          `http://${import.meta.env.VITE_IP}/GetArea`
         );
         setAreas(res.data);
       } catch (err) {
@@ -154,7 +154,7 @@ export default function ItemEstoqueMan() {
     if (state.tipo == 1) {
       try {
         const res = await axios.post(
-          `http://${import.meta.env.VITE_IP}:4400/CriarEstMan`,
+          `http://${import.meta.env.VITE_IP}/CriarEstMan`,
           formdata,
           {
             params: {
@@ -177,7 +177,7 @@ export default function ItemEstoqueMan() {
     } else if (state.tipo == 2) {
       try {
         const res = await axios.post(
-          `http://${import.meta.env.VITE_IP}:4400/EditarEstMan`,
+          `http://${import.meta.env.VITE_IP}/EditarEstMan`,
           formdata,
           {
             params: {
@@ -248,7 +248,7 @@ export default function ItemEstoqueMan() {
   const getAnexo = async () => {
     try {
       const res = await axios.get(
-        `http://${import.meta.env.VITE_IP}:4400/getAnexoEstMan`,
+        `http://${import.meta.env.VITE_IP}/getAnexoEstMan`,
         { params: { EstManId: itemEst.EstManId } }
       );
       if (res?.data.length > 0) {

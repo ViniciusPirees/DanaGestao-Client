@@ -28,8 +28,14 @@ export default class ItensMateriais extends React.Component {
     this.props.setItems(itemCatch);
   }
   updateDesc(event) {
+    var txt = "";
+    if (event.target.value.length > 254) {
+      txt = event.target.value.slice(0, 254);
+    } else {
+      txt = event.target.value;
+    }
     this.setState({
-      desc: event.target.value,
+      desc: txt,
     });
   }
 
@@ -65,7 +71,11 @@ export default class ItensMateriais extends React.Component {
   handleDescChanged(i, event) {
     var items = this.state.items;
 
-    items[i][0] = event.target.value;
+    if (event.target.value.length > 254) {
+      items[i][0] = event.target.value.slice(0, 254);
+    } else {
+      items[i][0] = event.target.value;
+    }
 
     this.props.setItems(items);
 
@@ -76,7 +86,7 @@ export default class ItensMateriais extends React.Component {
 
   handleQtdChanged(i, event) {
     var value = event.target.value;
-     value = Number(value).toFixed(0);
+    value = Number(value).toFixed(0);
     var items = this.state.items;
     items[i][1] = value;
 
@@ -108,7 +118,7 @@ export default class ItensMateriais extends React.Component {
           <td>
             <input
               type="text"
-              className={"mb-2 w-[90%] ml-[5%] " + styleAll.inputSemOutline}
+              className={"mb-2 w-[95%] desktop:w-[90%] desktop:mr-0 desktop:ml-[5%] mr-[5%] " + styleAll.inputSemOutline}
               value={o[0]}
               onChange={context.handleDescChanged.bind(context, i)}
             />
@@ -137,10 +147,10 @@ export default class ItensMateriais extends React.Component {
   render() {
     return (
       <div className="text-[#fff]">
-        <table className="table-auto text-white rounded-1xl mt-4 -ml-10 w-full">
+        <table className="table-auto text-white rounded-1xl mt-4 desktop:-ml-10 w-full">
           <thead>
             <tr className="text-2xl font-extrabold p-3">
-              <th className="p-3 w-[70%]">Descrição</th>
+              <th className="pr-3 w-[70%]">Descrição</th>
               <th className="p-3">Quantidade</th>
               <th></th>
             </tr>
@@ -150,7 +160,7 @@ export default class ItensMateriais extends React.Component {
         </table>
         <hr className="border-2 mt-6" />
         <div className="flex">
-          <table className="table-auto text-white rounded-1xl -ml-10 w-full">
+          <table className="table-auto text-white rounded-1xl desktop:-ml-10 w-full">
             <thead>
               <tr className="text-2xl font-extrabold p-3">
                 <th className="p-3 w-[70%]"></th>
@@ -160,17 +170,17 @@ export default class ItensMateriais extends React.Component {
             </thead>
             <tbody>
               <tr>
-                <td>
+                <td className="  ">
                   <input
                     type="text"
                     className={
-                      "mb-2 w-[90%] ml-[5%] " + styleAll.inputSemOutline
+                      "mb-2 w-[95%] desktop:w-[90%] desktop:mr-0 desktop:ml-[5%] mr-[5%] " + styleAll.inputSemOutline
                     }
                     value={this.state.desc}
                     onChange={this.updateDesc.bind(this)}
                   />
                 </td>
-                <td>
+                <td className="before:absolute">
                   <input
                     type="number"
                     className={
@@ -180,7 +190,7 @@ export default class ItensMateriais extends React.Component {
                     onChange={this.updateQtd.bind(this)}
                   />
                 </td>
-                <td>
+                <td className="before:absolute">
                   <button
                     className="duration-200 hover:scale-105"
                     onClick={this.handleClick.bind(this)}

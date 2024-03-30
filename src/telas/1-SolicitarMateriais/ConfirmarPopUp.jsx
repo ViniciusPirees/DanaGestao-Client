@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import ImgPopUp from "../components/ImgPopUp";
+import ImgPopUp from "../components/Camera/ImgPopUp";
 import { useNavigate } from "react-router-dom";
 import Notificacao from "../components/Notificacao";
 import axios from "axios";
@@ -18,7 +18,7 @@ export default function ConfirmarPopUp({ params, anexo, setConfirm }) {
 
     try {
       const res = await axios.post(
-        `http://${import.meta.env.VITE_IP}:4400/CriarSolic`,
+        `http://${import.meta.env.VITE_IP}/CriarSolic`,
         formdata,
         {
           params: params,

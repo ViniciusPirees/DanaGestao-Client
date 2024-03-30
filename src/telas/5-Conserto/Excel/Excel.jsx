@@ -23,13 +23,16 @@ export default async function Excel({ conserto }) {
     "Nº SO",
     "Fornecedor",
     "Nº NF",
+    "Qtde. Saída",
+    "Qtde. Retorno",
+    "Saldo Disponível",
     "Nº Orçamento",
     "Nº OC",
     "Observação",
     "Item Descrição",
     "Item Tipo Material",
     "Item Problema",
-    "Item Valor",
+    "Item Qtde.",
   ];
 
   ws.getCell("A1").fill = {
@@ -135,7 +138,21 @@ export default async function Excel({ conserto }) {
     pattern: "solid",
     fgColor: { argb: "1C85C7" },
   };
-
+  ws.getCell("U1").fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "1C85C7" },
+  };
+  ws.getCell("V1").fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "1C85C7" },
+  };
+  ws.getCell("W1").fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "1C85C7" },
+  };
   ws.columns = [
     { key: "cod", width: 12 },
     { key: "data", width: 20 },
@@ -152,6 +169,11 @@ export default async function Excel({ conserto }) {
     { key: "forn", width: 35 },
 
     { key: "nf", width: 12 },
+
+    { key: "qtdSa", width: 12 },
+    { key: "qtdRet", width: 12 },
+    { key: "saldodip", width: 12 },
+
     { key: "orc", width: 15 },
 
     { key: "oc", width: 20 },
@@ -162,21 +184,54 @@ export default async function Excel({ conserto }) {
     { key: "itemvalu", width: 15 },
   ];
 
-  const status = ({ numRC, reqstatus, poNum, closed }) => {
-    if (numRC == 0) {
+  const status = ({ conserto }) => {
+    if (conserto?.ConNumRC == "") {
       return "Sem RC";
-    } else if (reqstatus == "IN PROCESS" && poNum == null) {
+    } else if (conserto?.ConNumRC == "G") {
+      return "Garantia";
+    } else if (
+      conserto?.REQ_STATUS == "PRE-APPROVED" ||
+      (conserto?.REQ_STATUS == "APPROVED" &&
+        conserto?.PO_NUM == null &&
+        conserto?.REQ_APPROVER == conserto?.PREPARER &&
+        (conserto?.LINE_TOTAL_RC == 0 || conserto?.LINE_TOTAL_RC == null) &&
+        conserto.PENDING_TOTAL_RC == 0 &&
+        conserto.RECEIVED_TOTAL_RC == 0)
+    ) {
+      return "RC em orçamento de compras";
+    } else if (
+      conserto?.REQ_STATUS == "INCOMPLETE" ||
+      (conserto?.REQ_STATUS == "IN PROCESS" &&
+        conserto?.PO_NUM == null &&
+        conserto?.REQ_APPROVER == conserto?.PREPARER &&
+        (conserto?.LINE_TOTAL_RC > 0 ||
+          conserto.PENDING_TOTAL_RC > 0 ||
+          conserto.RECEIVED_TOTAL_RC > 0))
+    ) {
+      return "Requer aprovação do solicitante";
+    } else if (
+      conserto?.REQ_STATUS == "IN PROCESS" &&
+      conserto?.PO_NUM == null
+    ) {
       return "RC Em aprovação";
-    } else if (reqstatus == "APPROVED" && poNum == null) {
+    } else if (conserto?.REQ_STATUS == "APPROVED" && conserto?.PO_NUM == null) {
       return "RC Aprovada sem pedido";
-    } else if (reqstatus == "APPROVED" && poNum != null && closed == "OPEN") {
+    } else if (
+      conserto?.REQ_STATUS == "APPROVED" &&
+      conserto?.PO_NUM != null &&
+      conserto.CLOSED_CODE == "OPEN"
+    ) {
       return "RC Aprovada com pedido aberto";
-    } else if (reqstatus == "APPROVED" && poNum != null && closed == "CLOSED") {
+    } else if (
+      conserto?.REQ_STATUS == "APPROVED" &&
+      conserto?.PO_NUM != null &&
+      conserto.CLOSED_CODE == "CLOSED"
+    ) {
       return "RC Aprovada com pedido entregue";
     } else if (
-      reqstatus != "APPROVED" &&
-      reqstatus != "IN PROCESS" &&
-      reqstatus != null
+      conserto?.REQ_STATUS != "APPROVED" &&
+      conserto?.REQ_STATUS != "IN PROCESS" &&
+      conserto?.REQ_STATUS != null
     ) {
       return "RC Cancelada";
     } else {
@@ -193,10 +248,7 @@ export default async function Excel({ conserto }) {
     valor.ConNum,
     valor.ConNumRC,
     status({
-      numRC: valor.ConCod,
-      reqstatus: valor.REQ_STATUS,
-      poNum: valor.PO_NUM,
-      closed: valor.CLOSED_CODE,
+      conserto: valor,
     }),
     valor.ConManNome,
     valor.ConMaqDesc,
@@ -204,10 +256,15 @@ export default async function Excel({ conserto }) {
     valor.ConMaqSetor,
     valor.ConMaqDivEBS,
     valor.ConNumSo,
-    valor.ConForDesc,
-    valor.ConNF,
+    valor.PARTY_NAME,
+    valor.NF,
+    valor.QUANT,
+    valor.QTDE_RET,
+    valor.SALDO_DISPONIVEL,
     valor.ConOrc,
-    valor.ConNumOC,
+    `${valor.PO_NUM == null ? "" : valor.PO_NUM} ${
+      valor.CLOSED_CODE == null ? "" : valor.CLOSED_CODE
+    }`,
     valor.ConObs,
     valor.ConItemDescricao,
     valor.ConItemTipMatDesc,
@@ -446,6 +503,39 @@ export default async function Excel({ conserto }) {
         bottom: { style: "thin" },
         right: { style: "thin" },
       };
+      ws.getCell(`U${index + 2}`).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "f5f9fc" },
+      };
+      ws.getCell(`U${index + 2}`).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      ws.getCell(`V${index + 2}`).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "f5f9fc" },
+      };
+      ws.getCell(`V${index + 2}`).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      ws.getCell(`W${index + 2}`).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "f5f9fc" },
+      };
+      ws.getCell(`W${index + 2}`).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
     } else {
       ws.getCell(`A${index + 2}`).fill = {
         type: "pattern",
@@ -667,6 +757,39 @@ export default async function Excel({ conserto }) {
         bottom: { style: "thin" },
         right: { style: "thin" },
       };
+      ws.getCell(`U${index + 2}`).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFFFF" },
+      };
+      ws.getCell(`U${index + 2}`).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      ws.getCell(`V${index + 2}`).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFFFF" },
+      };
+      ws.getCell(`V${index + 2}`).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
+      ws.getCell(`W${index + 2}`).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFFFFF" },
+      };
+      ws.getCell(`W${index + 2}`).border = {
+        top: { style: "thin" },
+        left: { style: "thin" },
+        bottom: { style: "thin" },
+        right: { style: "thin" },
+      };
     }
   });
 
@@ -766,6 +889,21 @@ export default async function Excel({ conserto }) {
     wrapText: true,
   };
   ws.getColumn(20).alignment = {
+    vertical: "middle",
+    horizontal: "center",
+    wrapText: true,
+  };
+  ws.getColumn(21).alignment = {
+    vertical: "middle",
+    horizontal: "center",
+    wrapText: true,
+  };
+  ws.getColumn(22).alignment = {
+    vertical: "middle",
+    horizontal: "center",
+    wrapText: true,
+  };
+  ws.getColumn(23).alignment = {
     vertical: "middle",
     horizontal: "center",
     wrapText: true,

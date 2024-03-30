@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { ToastContainer } from 'react-toastify'
 import NavBar from '../../../components/NavBar'
-import Titulo from '../../../components/Titulo'
+import Titulo from '../../../components/NavBar/Titulo'
 import ConfirmarAlterarSaldo from './ConfirmarAlterarSaldo'
 import Notificacao from '../../../components/Notificacao'
 import { useNavigate } from 'react-router-dom'
-import getLogin from '../../../components/getLogin'
+import getLogin from '../../../components/Login/getLogin"'
 import { styleAll } from '../../../../css'
 
 export default function AlterarSaldo({ setInfosEst, infosEst }) {
