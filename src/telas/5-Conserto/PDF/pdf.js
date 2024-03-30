@@ -1,6 +1,6 @@
 import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
-pdfMake.vfs = pdfFonts.pdfMake.vfs;
+//import pdfFonts from "pdfmake/build/vfs_fonts";
+//pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 import DanaPng from "../../../assets/DANAPNG.png";
 // Read HTML Template
